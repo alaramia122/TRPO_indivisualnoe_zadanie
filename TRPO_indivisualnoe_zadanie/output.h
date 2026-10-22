@@ -1,6 +1,8 @@
+// Защищаем интерфейс вывода.
 #pragma once
 
+// Подключаем результат анализа.
 #include "Struct.h"
 
-// Выводит статистику и диагностики анализа.
+// Выводим статистику и диагностики.
 void show_analysis_result(const HtmlAnalysisResult& result);
