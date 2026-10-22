@@ -2,7 +2,7 @@
 
 namespace {
 
-// Этим HTML-элементам по правилам рассматриваемого подмножества не нужна закрывающая пара.
+// Эти HTML-элементы по правилам рассматриваемого подмножества используют одиночную форму.
 const std::vector<std::string> void_elements = {
     "area", "base", "br", "col", "embed", "hr", "img",
     "input", "link", "meta", "param", "source", "track", "wbr"
@@ -27,7 +27,7 @@ bool is_void_element(const std::string& name) {
 
 // Проверяем вложенность парных тегов после лексического разбора исходного документа.
 void validate_html_structure(HtmlAnalysisResult& result) {
-    // Вершина стека всегда соответствует последнему ещё не закрытому элементу.
+    // Вершина стека соответствует последнему открытому элементу, ожидающему закрытия.
     std::vector<OpenElement> stack;
 
     // Последовательный проход сохраняет порядок исходных тегов и диагностик.
@@ -39,17 +39,17 @@ void validate_html_structure(HtmlAnalysisResult& result) {
             continue;
         }
 
-        // Токены других типов не меняют состояние стека открытых элементов.
+        // Токены других типов сохраняют текущее состояние стека открытых элементов.
         if (token.type != HtmlTokenType::CloseTag) {
             continue;
         }
 
-        // При пустом стеке текущий закрывающий тег не может соответствовать открытию.
+        // Пустой стек указывает на закрывающий тег без предшествующего открытия.
         if (stack.empty()) {
             result.diagnostics.push_back({
                 "Структурная ошибка",
                 "Закрывающий тег </" + token.name +
-                    "> не имеет открывающей пары.",
+                    "> встретился без предшествующего открывающего тега.",
                 token.line,
                 token.column
             });
@@ -58,7 +58,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
 
         // Если совпала вершина, вложенность корректна и достаточно снять один элемент.
         if (stack.back().name == token.name) {
-            // После регистрации ошибки элемент больше не участвует в дальнейшей проверке.
+            // После регистрации ошибки элемент исключается из дальнейшей проверки.
             stack.pop_back();
             continue;
         }
@@ -72,12 +72,12 @@ void validate_html_structure(HtmlAnalysisResult& result) {
                 return element.name == token.name;
             });
 
-        // Совпадения нет во всём стеке: сообщаем о лишнем или неверном закрывающем теге.
+        // Поиск по стеку определяет закрывающий тег без соответствующего открытия.
         if (matching == stack.rend()) {
             result.diagnostics.push_back({
                 "Структурная ошибка",
                 "Закрывающий тег </" + token.name +
-                    "> не имеет открывающей пары; ожидался закрывающий "
+                    "> встретился без соответствующей открывающей пары; ожидался закрывающий "
                     "тег для <" + stack.back().name + ">.",
                 token.line,
                 token.column
@@ -103,7 +103,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
             result.diagnostics.push_back({
                 "Структурная ошибка",
                 "Открывающий тег <" + unclosed.name +
-                    "> не закрыт до закрывающего тега </" +
+                    "> остался открытым до закрывающего тега </" +
                     token.name + ">.",
                 unclosed.line,
                 unclosed.column
@@ -123,7 +123,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
         result.diagnostics.push_back({
             "Структурная ошибка",
             "Открывающий тег <" + element.name +
-                "> не имеет закрывающего тега.",
+                "> ожидает закрывающий тег.",
             element.line,
             element.column
         });
