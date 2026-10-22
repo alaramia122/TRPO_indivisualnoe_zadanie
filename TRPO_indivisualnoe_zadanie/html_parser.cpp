@@ -14,7 +14,7 @@ public:
 
         // Проходим по исходным байтам один раз.
         for (std::size_t i = 0; i < source.size(); ++i) {
-            // Читаем байт без знакового расширения.
+            // Читаем байт через unsigned char для сохранения диапазона значений.
             const unsigned char ch = static_cast<unsigned char>(source[i]);
 
             // Определяем продолжение UTF-8 последовательности.
@@ -23,7 +23,7 @@ public:
             // Отделяем символы перевода строки от подсчёта столбца.
             const bool newline_byte = ch == '\r' || ch == '\n';
 
-            // Считаем Unicode-кодовые точки, а не байты UTF-8.
+            // Количество столбцов определяем по Unicode-кодовым точкам UTF-8.
             codepoint_prefix_[i + 1] = codepoint_prefix_[i] + ((!continuation && !newline_byte) ? 1u : 0u);
 
             // Обрабатываем CR и CRLF как один перевод строки.
@@ -97,7 +97,7 @@ void diagnostic(HtmlAnalysisResult& result,
      p.first,
      p.second });
      }
-// Определяем синтаксический слеш, не путая его со слешем в значении атрибута.
+// Отличаем синтаксический слеш от слеша внутри значения атрибута.
 bool is_self_closing(const std::string& inside,
      std::size_t cursor) {
     // Самозакрывающийся маркер должен непосредственно предшествовать >.
@@ -121,7 +121,7 @@ bool is_self_closing(const std::string& inside,
         // Пропускаем имя атрибута.
         while (cursor < inside.size() && name_char(inside[cursor])) ++cursor;
 
-        // Пропускаем неожиданный символ, не допуская зацикливания.
+        // Пропускаем неожиданный символ и продвигаем курсор для продолжения разбора.
         if (cursor == name_start) { ++cursor;
              continue;
              }
@@ -132,7 +132,7 @@ bool is_self_closing(const std::string& inside,
             ++cursor;
         }
 
-        // Атрибут без значения не влияет на распознавание слеша.
+        // Распознавание слеша учитывает символы вне значения атрибута.
         if (cursor >= inside.size() || inside[cursor] != '=') continue;
 
         // Пропускаем знак равенства.
@@ -156,19 +156,19 @@ bool is_self_closing(const std::string& inside,
             // Переходим за закрывающую кавычку, если она найдена.
             if (cursor < inside.size()) ++cursor;
 
-        // Обрабатываем некавыченное значение.
+        // Обрабатываем значение в свободной записи.
         } else {
             // Запоминаем начало значения.
             const std::size_t value_start = cursor;
 
-            // Слеш без пробела остаётся частью значения.
+            // Слеш, примыкающий к значению, остаётся частью значения.
             while (cursor < inside.size() &&
                    !std::isspace(
                        static_cast<unsigned char>(inside[cursor]))) {
                 ++cursor;
             }
 
-            // Если значение дошло до завершающего слеша, это не маркер самозакрытия.
+            // Если значение заканчивается слешем, этот символ относится к значению атрибута.
             if (cursor == inside.size() && value_start < inside.size()) return false;
 
         }
@@ -211,7 +211,7 @@ void parse_html(const std::string& source,
                  i + 4);
                  token.type = HtmlTokenType::Comment;
 
-            // Обрабатываем незакрытый комментарий.
+            // Обрабатываем комментарий, продолжающийся до конца файла.
             if (end == std::string::npos) { token.raw_text = source.substr(i);
                  diagnostic(result,
                  "Лексическая ошибка",
@@ -254,7 +254,7 @@ void parse_html(const std::string& source,
             // Отмечаем декларацию отдельным типом токена.
             token.type = HtmlTokenType::Declaration;
 
-            // Диагностируем незавершённую декларацию.
+            // Диагностируем декларацию, продолжающуюся до конца файла.
             if (declaration_end >= source.size()) { token.raw_text = source.substr(i);
                  diagnostic(result,
                  "Лексическая ошибка",
@@ -301,7 +301,7 @@ void parse_html(const std::string& source,
              else if (ch == '"' && !single) dual = !dual;
              else if (ch == '>' && !single && !dual) break;
              }
-        // Обрабатываем незавершённый тег.
+        // Обрабатываем тег, продолжающийся до конца файла.
         if (end == source.size()) { diagnostic(result,
              "Лексическая ошибка",
              "Для тега ожидается завершающий символ >.",
@@ -342,17 +342,17 @@ void parse_html(const std::string& source,
         // Считываем имя тега.
         while (cursor < inside.size() && name_char(inside[cursor])) ++cursor;
 
-        // Обрабатываем тег без имени.
+        // Обрабатываем конструкцию с пустой позицией имени тега.
         if (cursor == name_start) { diagnostic(result,
              "Лексическая ошибка",
-             "После символа < не удалось определить имя тега.",
+             "После символа < ожидается имя тега.",
              positions,
              start);
              token.type = HtmlTokenType::Text;
              result.tokens.push_back(token);
              continue;
              }
-        // Сохраняем имя тега без учёта регистра.
+        // Сохраняем имя тега в нижнем регистре.
         token.name = lower_ascii(inside.substr(name_start,
              cursor - name_start));
 
@@ -378,7 +378,7 @@ void parse_html(const std::string& source,
 
         // Разбираем открывающий или самозакрывающийся тег.
         } else {
-            // Распознаём маркер самозакрытия вне некавыченных значений.
+            // Распознаём маркер самозакрытия за пределами значений атрибутов.
             const bool self = is_self_closing(inside,
                  cursor);
                  token.type = self ? HtmlTokenType::SelfClosingTag : HtmlTokenType::OpenTag;
@@ -439,7 +439,7 @@ void parse_html(const std::string& source,
                          positions,
                          start);
                          }
-                    // Слеш внутри некавыченного значения является частью значения.
+                    // Слеш внутри значения в свободной записи является частью значения.
                     else { const std::size_t vstart = cursor;
                          while (cursor < inside.size() &&
                                 !std::isspace(
