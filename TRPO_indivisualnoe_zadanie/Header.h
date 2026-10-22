@@ -1,27 +1,29 @@
 #pragma once
+// Не допускаем повторного подключения общего заголовка в одной единице трансляции.
 
-#include <algorithm>
-#include <cctype>
-#include <clocale>
-#include <cstdlib>
-#include <exception>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
-#include <Windows.h>
-#include <conio.h>
+#include <algorithm> // Алгоритмы поиска, сортировки и преобразования диапазонов.
+#include <cctype> // Проверки и преобразования отдельных символов.
+#include <clocale> // Настройка локали для русскоязычного консольного интерфейса.
+#include <cstdlib> // Системные функции стандартной библиотеки, включая system().
+#include <exception> // Базовые типы исключений стандартной библиотеки.
+#include <filesystem> // Проверка каталогов и перечисление файлов входных данных.
+#include <fstream> // Файловые потоки для чтения исходных документов.
+#include <iostream> // Потоки консольного ввода и вывода.
+#include <sstream> // Потоки для обработки строкового содержимого.
+#include <string> // Строки для текста HTML, путей и сообщений.
+#include <utility> // Вспомогательные типы и операции, например пары значений.
+#include <vector> // Динамические последовательности токенов, атрибутов и диагностик.
+#include <Windows.h> // Функции Windows для настройки консольного ввода и вывода.
+#include <conio.h> // Непосредственное считывание нажатий клавиш в консоли.
 
-#include "Struct.h"
+#include "Struct.h" // Общие структуры данных, которыми обмениваются модули.
 
+// Короткое имя упрощает обращения к операциям файловой системы.
 namespace fs = std::filesystem;
 
-#include "utils.h"
-#include "menu.h"
-#include "file_reader.h"
-#include "html_parser.h"
-#include "html_validator.h"
-#include "output.h"
+#include "utils.h" // Вспомогательные функции обработки строк и клавиатурного ввода.
+#include "menu.h" // Интерфейс экранов меню и выбора исходного файла.
+#include "file_reader.h" // Интерфейс чтения исходного файла в строку.
+#include "html_parser.h" // Интерфейс преобразования текста HTML в токены.
+#include "html_validator.h" // Интерфейс проверки вложенности тегов.
+#include "output.h" // Интерфейс отображения статистики и диагностик.
