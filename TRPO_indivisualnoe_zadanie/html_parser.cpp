@@ -100,7 +100,7 @@ void diagnostic(HtmlAnalysisResult& result,
 // Отличаем синтаксический слеш от слеша внутри значения атрибута.
 bool is_self_closing(const std::string& inside,
      std::size_t cursor) {
-    // Самозакрывающийся маркер должен непосредственно предшествовать >.
+    // Маркер самозакрытия должен располагаться прямо перед >.
     if (inside.empty() || inside.back() != '/') return false;
 
     // Просматриваем остаток открывающего тега.
@@ -121,7 +121,7 @@ bool is_self_closing(const std::string& inside,
         // Пропускаем имя атрибута.
         while (cursor < inside.size() && name_char(inside[cursor])) ++cursor;
 
-        // Пропускаем неожиданный символ и продвигаем курсор для продолжения разбора.
+        // Пропускаем посторонний символ и продвигаем курсор для продолжения разбора.
         if (cursor == name_start) { ++cursor;
              continue;
              }
