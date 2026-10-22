@@ -6,7 +6,7 @@ struct Input_data { // Сохраняем контракт исходного ut
     bool Esc_controller = false; // Отмечаем отмену через Esc.
     bool Enter_controller = false; // Отмечаем подтверждение через Enter.
 }; // Завершаем структуру ввода.
-enum class HtmlTokenType { OpenTag, CloseTag, SelfClosingTag, Comment, Text }; // Перечисляем виды фрагментов HTML.
+enum class HtmlTokenType { OpenTag, CloseTag, SelfClosingTag, Comment, Declaration, Text }; // Перечисляем виды фрагментов HTML, включая doctype и декларации.
 struct HtmlAttribute { std::string name; std::string value; }; // Храним имя и значение атрибута.
 struct HtmlToken { // Храним один фрагмент исходного документа.
     HtmlTokenType type = HtmlTokenType::Text; // Задаём тип по умолчанию.

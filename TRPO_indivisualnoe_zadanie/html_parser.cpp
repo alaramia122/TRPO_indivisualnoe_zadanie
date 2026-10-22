@@ -24,6 +24,16 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Вы
             else { i = end + 3; token.raw_text = source.substr(start, i - start); } // Сохраняем корректный комментарий.
             ++result.comments; result.tokens.push_back(token); continue; // Учитываем комментарий и продолжаем разбор.
         } // Завершаем ветку комментариев.
+        if (source.compare(i, 2, "<!") == 0 || source.compare(i, 2, "<?") == 0) { // Распознаём декларации, включая <!DOCTYPE html>, и инструкции обработки.
+            bool single_quote = false, double_quote = false; // Отслеживаем кавычки внутри декларации.
+            std::size_t declaration_end = i + 2; // Начинаем поиск конца после вводного символа.
+            for (; declaration_end < source.size(); ++declaration_end) { const char ch = source[declaration_end]; if (ch == '\'' && !double_quote) single_quote = !single_quote; else if (ch == '"' && !single_quote) double_quote = !double_quote; else if (ch == '>' && !single_quote && !double_quote) break; } // Ищем > вне кавычек.
+            token.type = HtmlTokenType::Declaration; // Отмечаем фрагмент как декларацию, а не как обычный тег или комментарий.
+            if (declaration_end >= source.size()) { token.raw_text = source.substr(i); diagnostic(result, "Лексическая ошибка", "HTML-декларация не завершена символом >.", source, start); i = source.size(); } // Диагностируем незавершённую декларацию.
+            else { i = declaration_end + 1; token.raw_text = source.substr(start, i - start); } // Сохраняем корректную декларацию и переходим за неё.
+            result.tokens.push_back(token); // Добавляем декларацию в последовательность токенов.
+            continue; // Продолжаем разбор следующего фрагмента.
+        } // Завершаем обработку декларации.
         if (source[i] != '<') { // Обрабатываем текст вне тегов.
             const std::size_t end = source.find('<', i); i = end == std::string::npos ? source.size() : end; // Ищем следующую разметку.
             token.type = HtmlTokenType::Text; token.raw_text = source.substr(start, i - start); ++result.text_segments; result.tokens.push_back(token); continue; // Сохраняем текстовый токен.
