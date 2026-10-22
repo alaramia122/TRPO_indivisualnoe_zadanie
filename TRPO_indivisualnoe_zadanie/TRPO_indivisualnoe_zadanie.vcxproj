@@ -35,5 +35,7 @@
     <ClInclude Include="html_validator.h" /> <!-- Добавляем интерфейс валидатора. -->
     <ClInclude Include="output.h" /> <!-- Добавляем интерфейс вывода. -->
   </ItemGroup> <!-- Завершаем список заголовков. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"><LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory></PropertyGroup> <!-- Запускаем Debug из корня решения для поиска SourceTexts. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'"><LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory></PropertyGroup> <!-- Запускаем Release из корня решения для поиска SourceTexts. -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" /> <!-- Подключаем цели сборки MSBuild. -->
 </Project> <!-- Завершаем файл проекта. -->
