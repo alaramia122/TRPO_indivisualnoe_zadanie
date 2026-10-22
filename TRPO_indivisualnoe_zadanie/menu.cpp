@@ -51,6 +51,7 @@ int show_main_menu() {
         }
 
         // До Enter, при пустой строке или нечисловом вводе выбор не принимается.
+        // При незавершённом вводе или недопустимых символах запрашиваем номер повторно.
         if (!input.Enter_controller ||
             input.result.empty() ||
             !contains_only(input.result, 'ц')) {
@@ -76,6 +77,7 @@ int show_main_menu() {
 
 // Возвращает имя выбранного HTML-файла; пустая строка обозначает отмену.
 std::string choose_source_file() {
+    // Повторяем выбор, пока пользователь не укажет существующий файл или не отменит действие.
     while (true) {
         system("cls");
 
@@ -143,6 +145,7 @@ std::string choose_source_file() {
 
         Input_data input = input_data_reader(true, true, false);
 
+        // Esc отменяет выбор, не запуская анализ документа.
         if (input.Esc_controller) {
             return "";
         }
