@@ -120,7 +120,7 @@ Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
                 data.result += ch;
 
                 // Флаг отображения управляет выводом символа, но не его сохранением в строке.
-            if (flag2) {
+                if (flag2) {
                     std::cout << ch;
                 }
             }
