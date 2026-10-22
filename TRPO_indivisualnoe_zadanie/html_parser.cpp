@@ -439,7 +439,7 @@ void parse_html(const std::string& source,
                     // Слеш внутри некавыченного значения является частью значения.
                     else { const std::size_t vstart = cursor;
                          while (cursor < inside.size() &&
-                                std::isspace(
+                                !std::isspace(
                                     static_cast<unsigned char>(inside[cursor]))) {
                              ++cursor;
                          }
