@@ -32,7 +32,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
 
     // Последовательный проход сохраняет порядок исходных тегов и диагностик.
     for (const HtmlToken& token : result.tokens) {
-        // Открывающий тег добавляется в стек, кроме элементов без закрывающей пары.
+        // Открывающие теги парных элементов добавляются в стек.
         if (token.type == HtmlTokenType::OpenTag &&
             !is_void_element(token.name)) {
             stack.push_back({ token.name, token.line, token.column });
@@ -58,7 +58,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
 
         // Если совпала вершина, вложенность корректна и достаточно снять один элемент.
         if (stack.back().name == token.name) {
-            // После регистрации ошибки элемент исключается из дальнейшей проверки.
+            // После регистрации ошибки дальнейшая проверка продолжается с оставшимися элементами.
             stack.pop_back();
             continue;
         }
