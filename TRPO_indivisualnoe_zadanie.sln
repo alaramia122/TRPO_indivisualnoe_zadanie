@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "TRPO_indivisualnoe_zadanie", "TRPO_indivisualnoe_zadanie\TRPO_indivisualnoe_zadanie.vcxproj", "{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}.Debug|x64.ActiveCfg = Debug|x64
+		{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}.Debug|x64.Build.0 = Debug|x64
+		{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}.Release|x64.ActiveCfg = Release|x64
+		{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

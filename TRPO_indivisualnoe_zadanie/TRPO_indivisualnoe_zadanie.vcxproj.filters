@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Описываем фильтры файлов Visual Studio. -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> <!-- Начинаем описание фильтров. -->
+  <ItemGroup> <!-- Объявляем фильтры проекта. -->
+    <Filter Include="Исходные файлы"><UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier><Extensions>cpp;c;cc;cxx</Extensions></Filter> <!-- Создаём фильтр исходников. -->
+    <Filter Include="Заголовочные файлы"><UniqueIdentifier>{93995380-89BD-4B04-88EB-625FBE52EBFB}</UniqueIdentifier><Extensions>h;hpp;hxx</Extensions></Filter> <!-- Создаём фильтр заголовков. -->
+  </ItemGroup> <!-- Завершаем описание фильтров. -->
+  <ItemGroup> <!-- Назначаем исходным файлам фильтр. -->
+    <ClCompile Include="main.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем main.cpp. -->
+    <ClCompile Include="menu.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем menu.cpp. -->
+    <ClCompile Include="utils.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем utils.cpp. -->
+    <ClCompile Include="file_reader.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем file_reader.cpp. -->
+    <ClCompile Include="html_parser.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем html_parser.cpp. -->
+    <ClCompile Include="html_validator.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем html_validator.cpp. -->
+    <ClCompile Include="output.cpp"><Filter>Исходные файлы</Filter></ClCompile> <!-- Группируем output.cpp. -->
+  </ItemGroup> <!-- Завершаем список исходников. -->
+  <ItemGroup> <!-- Назначаем заголовкам фильтр. -->
+    <ClInclude Include="Header.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем Header.h. -->
+    <ClInclude Include="Struct.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем Struct.h. -->
+    <ClInclude Include="menu.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем menu.h. -->
+    <ClInclude Include="utils.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем utils.h. -->
+    <ClInclude Include="file_reader.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем file_reader.h. -->
+    <ClInclude Include="html_parser.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем html_parser.h. -->
+    <ClInclude Include="html_validator.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем html_validator.h. -->
+    <ClInclude Include="output.h"><Filter>Заголовочные файлы</Filter></ClInclude> <!-- Группируем output.h. -->
+  </ItemGroup> <!-- Завершаем список заголовков. -->
+</Project> <!-- Завершаем описание фильтров. -->

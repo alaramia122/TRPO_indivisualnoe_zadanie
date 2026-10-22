@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Описываем проект Visual C++. -->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> <!-- Начинаем файл проекта MSBuild. -->
+  <ItemGroup Label="ProjectConfigurations"> <!-- Перечисляем конфигурации сборки. -->
+    <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration> <!-- Добавляем конфигурацию Debug x64. -->
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration> <!-- Добавляем конфигурацию Release x64. -->
+  </ItemGroup> <!-- Завершаем список конфигураций. -->
+  <PropertyGroup Label="Globals"> <!-- Задаём основные параметры проекта. -->
+    <VCProjectVersion>18.0</VCProjectVersion> <!-- Указываем формат Visual Studio 2026. -->
+    <Keyword>Win32Proj</Keyword> <!-- Указываем тип проекта C++. -->
+    <ProjectGuid>{B7E9E2B1-2B47-4E77-8C6B-AC3D77E3F271}</ProjectGuid> <!-- Задаём уникальный идентификатор проекта. -->
+    <RootNamespace>TRPO_indivisualnoe_zadanie</RootNamespace> <!-- Задаём имя проекта. -->
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion> <!-- Выбираем Windows SDK 10 или совместимый SDK. -->
+  </PropertyGroup> <!-- Завершаем основные параметры. -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" /> <!-- Загружаем стандартные свойства C++. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>Application</ConfigurationType><UseDebugLibraries>true</UseDebugLibraries><PlatformToolset>v145</PlatformToolset><CharacterSet>Unicode</CharacterSet></PropertyGroup> <!-- Настраиваем Debug x64. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>Application</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset><WholeProgramOptimization>true</WholeProgramOptimization><CharacterSet>Unicode</CharacterSet></PropertyGroup> <!-- Настраиваем Release x64. -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" /> <!-- Загружаем свойства компилятора. -->
+  <ItemDefinitionGroup><ClCompile><WarningLevel>Level4</WarningLevel><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp17</LanguageStandard><AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile><Link><SubSystem>Console</SubSystem></Link></ItemDefinitionGroup> <!-- Настраиваем предупреждения, C++17 и консольную подсистему. -->
+  <ItemGroup> <!-- Перечисляем исходные файлы проекта. -->
+    <ClCompile Include="main.cpp" /> <!-- Добавляем точку входа. -->
+    <ClCompile Include="menu.cpp" /> <!-- Добавляем консольное меню. -->
+    <ClCompile Include="utils.cpp" /> <!-- Подключаем исходный utility-модуль. -->
+    <ClCompile Include="file_reader.cpp" /> <!-- Добавляем чтение файлов. -->
+    <ClCompile Include="html_parser.cpp" /> <!-- Добавляем ручной HTML-парсер. -->
+    <ClCompile Include="html_validator.cpp" /> <!-- Добавляем проверку структуры. -->
+    <ClCompile Include="output.cpp" /> <!-- Добавляем вывод результата. -->
+  </ItemGroup> <!-- Завершаем список исходников. -->
+  <ItemGroup> <!-- Перечисляем заголовочные файлы. -->
+    <ClInclude Include="Header.h" /> <!-- Добавляем центральный заголовок. -->
+    <ClInclude Include="Struct.h" /> <!-- Добавляем общие структуры. -->
+    <ClInclude Include="menu.h" /> <!-- Добавляем интерфейс меню. -->
+    <ClInclude Include="utils.h" /> <!-- Добавляем интерфейс утилит. -->
+    <ClInclude Include="file_reader.h" /> <!-- Добавляем интерфейс чтения. -->
+    <ClInclude Include="html_parser.h" /> <!-- Добавляем интерфейс парсера. -->
+    <ClInclude Include="html_validator.h" /> <!-- Добавляем интерфейс валидатора. -->
+    <ClInclude Include="output.h" /> <!-- Добавляем интерфейс вывода. -->
+  </ItemGroup> <!-- Завершаем список заголовков. -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" /> <!-- Подключаем цели сборки MSBuild. -->
+</Project> <!-- Завершаем файл проекта. -->
