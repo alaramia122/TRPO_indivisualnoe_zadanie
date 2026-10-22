@@ -11,7 +11,7 @@ std::string lower_ascii(std::string value) { // Нормализуем имя т
 } // Завершаем нормализацию.
 bool name_char(char ch) { const unsigned char c = static_cast<unsigned char>(ch); return std::isalnum(c) || ch == '-' || ch == '_' || ch == ':' || c >= 128; } // Проверяем символ имени тега или атрибута.
 void diagnostic(HtmlAnalysisResult& result, const std::string& category, const std::string& message, const std::string& source, std::size_t offset) { const auto p = position_at(source, offset); result.diagnostics.push_back({ category, message, p.first, p.second }); } // Добавляем сообщение с координатами.
-} // Завершаем вспомогательные функции.
+}
 void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Выполняем последовательный ручной разбор.
     std::size_t i = 0; // Начинаем с первого символа.
     while (i < source.size()) { // Обрабатываем остаток документа.
@@ -23,7 +23,7 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Вы
             if (end == std::string::npos) { token.raw_text = source.substr(i); diagnostic(result, "Лексическая ошибка", "HTML-комментарий не закрыт последовательностью -->.", source, start); i = source.size(); } // Обрабатываем незакрытый комментарий.
             else { i = end + 3; token.raw_text = source.substr(start, i - start); } // Сохраняем корректный комментарий.
             ++result.comments; result.tokens.push_back(token); continue; // Учитываем комментарий и продолжаем разбор.
-        } // Завершаем ветку комментариев.
+        }
         if (source.compare(i, 2, "<!") == 0 || source.compare(i, 2, "<?") == 0) { // Распознаём декларации, включая <!DOCTYPE html>, и инструкции обработки.
             bool single_quote = false, double_quote = false; // Отслеживаем кавычки внутри декларации.
             std::size_t declaration_end = i + 2; // Начинаем поиск конца после вводного символа.
@@ -33,11 +33,11 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Вы
             else { i = declaration_end + 1; token.raw_text = source.substr(start, i - start); } // Сохраняем корректную декларацию и переходим за неё.
             result.tokens.push_back(token); // Добавляем декларацию в последовательность токенов.
             continue; // Продолжаем разбор следующего фрагмента.
-        } // Завершаем обработку декларации.
+        }
         if (source[i] != '<') { // Обрабатываем текст вне тегов.
             const std::size_t end = source.find('<', i); i = end == std::string::npos ? source.size() : end; // Ищем следующую разметку.
             token.type = HtmlTokenType::Text; token.raw_text = source.substr(start, i - start); ++result.text_segments; result.tokens.push_back(token); continue; // Сохраняем текстовый токен.
-        } // Завершаем обработку текста.
+        }
         bool single = false, dual = false; std::size_t end = i + 1; // Подготавливаем поиск конца тега с учётом кавычек.
         for (; end < source.size(); ++end) { const char ch = source[end]; if (ch == '\'' && !dual) single = !single; else if (ch == '"' && !single) dual = !dual; else if (ch == '>' && !single && !dual) break; } // Ищем > вне кавычек.
         if (end == source.size()) { diagnostic(result, "Лексическая ошибка", "Тег не завершён символом >.", source, start); token.type = HtmlTokenType::Text; token.raw_text = source.substr(start); result.tokens.push_back(token); break; } // Обрабатываем незавершённый тег.
@@ -62,8 +62,8 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Вы
                     else { const std::size_t vstart = cursor; while (cursor < inside.size() && !std::isspace(static_cast<unsigned char>(inside[cursor])) && !(inside[cursor] == '/' && inside.find_last_not_of(" \t\r\n") == cursor)) ++cursor; attr.value = inside.substr(vstart, cursor - vstart); } // Читаем некавыченное значение.
                 } // Завершаем чтение значения.
                 token.attributes.push_back(attr); ++result.attributes; // Сохраняем атрибут и увеличиваем счётчик.
-            } // Завершаем разбор атрибутов.
-        } // Завершаем обработку открывающего тега.
+            }
+        }
         result.tokens.push_back(token); // Добавляем токен в исходную последовательность.
-    } // Завершаем сканирование документа.
-} // Завершаем парсер.
+    }
+}
