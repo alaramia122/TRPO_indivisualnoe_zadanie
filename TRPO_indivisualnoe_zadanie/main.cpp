@@ -6,7 +6,7 @@ int main() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 
-    // Используем альтернативное имя локали при неподдерживаемом коротком имени Windows.
+    // Используем альтернативное имя локали для среды Windows.
     if (setlocale(LC_ALL, "ru") == nullptr) {
         setlocale(LC_ALL, "Russian_Russia.1251");
     }
