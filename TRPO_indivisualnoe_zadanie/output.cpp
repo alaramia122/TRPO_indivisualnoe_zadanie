@@ -2,9 +2,63 @@
 
 namespace {
 
-// Сохраняет UTF-8 без повторного преобразования перед выводом в UTF-8-консоль.
+// Преобразует текст HTML из UTF-8 в кодировку консольного интерфейса Windows-1251.
 std::string utf8_to_console(const std::string& value) {
-    return value;
+    if (value.empty()) {
+        return value;
+    }
+
+    const int wide_size = MultiByteToWideChar(
+        CP_UTF8,
+        MB_ERR_INVALID_CHARS,
+        value.data(),
+        static_cast<int>(value.size()),
+        nullptr,
+        0);
+
+    if (wide_size == 0) {
+        return value;
+    }
+
+    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\\0');
+    if (MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            value.data(),
+            static_cast<int>(value.size()),
+            wide_text.data(),
+            wide_size) == 0) {
+        return value;
+    }
+
+    const int output_size = WideCharToMultiByte(
+        1251,
+        0,
+        wide_text.data(),
+        wide_size,
+        nullptr,
+        0,
+        nullptr,
+        nullptr);
+
+    if (output_size == 0) {
+        return value;
+    }
+
+    std::string converted(static_cast<std::size_t>(output_size), '\\0');
+    if (WideCharToMultiByte(
+            1251,
+            0,
+            wide_text.data(),
+            wide_size,
+            converted.data(),
+            output_size,
+            nullptr,
+            nullptr) == 0) {
+        return value;
+    }
+
+    return converted;
 }
 
 // Возвращает значение атрибута с указанным именем.
