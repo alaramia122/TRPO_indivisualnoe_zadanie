@@ -145,7 +145,7 @@ void show_document_information(const HtmlAnalysisResult& result) {
                                 const std::vector<std::string>& items) {
         std::cout << label << " (" << items.size() << "):\n";
         if (items.empty()) {
-            std::cout << "  Элементы этого типа не обнаружены.\n";
+            std::cout << "  Список пуст.\n";
             return;
         }
 
