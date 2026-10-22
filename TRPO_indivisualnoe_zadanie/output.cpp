@@ -138,7 +138,7 @@ void show_document_information(const HtmlAnalysisResult& result) {
 
     std::cout << "\nИНФОРМАЦИЯ ИЗ ДОКУМЕНТА\n";
     std::cout << "Название: "
-              << (document_title.empty() ? "Элемент title не содержит текста" : document_title)
+              << (document_title.empty() ? "(пусто)" : document_title)
               << "\n";
 
     const auto print_items = [](const std::string& label,
