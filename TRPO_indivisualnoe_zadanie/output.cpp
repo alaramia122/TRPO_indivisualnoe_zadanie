@@ -2,9 +2,10 @@
 
 namespace {
 
-// Преобразует текст HTML из UTF-8 в кодировку консольного интерфейса Windows-1251.
-std::string utf8_to_console(const std::string& value) {
-    if (value.empty()) {
+// Исправляет распространённый случай текста UTF-8, ошибочно прочитанного как Windows-1251.
+std::string repair_mojibake_utf8(const std::string& value) {
+    if (value.find("Р") == std::string::npos &&
+        value.find("С") == std::string::npos) {
         return value;
     }
 
@@ -31,6 +32,118 @@ std::string utf8_to_console(const std::string& value) {
         return value;
     }
 
+    const int legacy_size = WideCharToMultiByte(
+        1251,
+        0,
+        wide_text.data(),
+        wide_size,
+        nullptr,
+        0,
+        nullptr,
+        nullptr);
+
+    if (legacy_size == 0) {
+        return value;
+    }
+
+    std::string legacy_bytes(static_cast<std::size_t>(legacy_size), '\\0');
+    if (WideCharToMultiByte(
+            1251,
+            0,
+            wide_text.data(),
+            wide_size,
+            legacy_bytes.data(),
+            legacy_size,
+            nullptr,
+            nullptr) == 0) {
+        return value;
+    }
+
+    const int repaired_size = MultiByteToWideChar(
+        CP_UTF8,
+        MB_ERR_INVALID_CHARS,
+        legacy_bytes.data(),
+        legacy_size,
+        nullptr,
+        0);
+
+    if (repaired_size == 0) {
+        return value;
+    }
+
+    std::wstring repaired_wide(
+        static_cast<std::size_t>(repaired_size), L'\\0');
+    if (MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            legacy_bytes.data(),
+            legacy_size,
+            repaired_wide.data(),
+            repaired_size) == 0) {
+        return value;
+    }
+
+    const int repaired_utf8_size = WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        repaired_wide.data(),
+        repaired_size,
+        nullptr,
+        0,
+        nullptr,
+        nullptr);
+
+    if (repaired_utf8_size == 0) {
+        return value;
+    }
+
+    std::string repaired(
+        static_cast<std::size_t>(repaired_utf8_size), '\\0');
+    if (WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            repaired_wide.data(),
+            repaired_size,
+            repaired.data(),
+            repaired_utf8_size,
+            nullptr,
+            nullptr) == 0) {
+        return value;
+    }
+
+    return repaired;
+}
+
+// Преобразует текст HTML из UTF-8 в кодировку консольного интерфейса Windows-1251.
+std::string utf8_to_console(const std::string& value) {
+    const std::string repaired = repair_mojibake_utf8(value);
+    if (repaired.empty()) {
+        return repaired;
+    }
+
+    const int wide_size = MultiByteToWideChar(
+        CP_UTF8,
+        MB_ERR_INVALID_CHARS,
+        repaired.data(),
+        static_cast<int>(repaired.size()),
+        nullptr,
+        0);
+
+    if (wide_size == 0) {
+        return repaired;
+    }
+
+    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\\0');
+    if (MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            repaired.data(),
+            static_cast<int>(repaired.size()),
+            wide_text.data(),
+            wide_size) == 0) {
+        return repaired;
+    }
+
     const int output_size = WideCharToMultiByte(
         1251,
         0,
@@ -42,7 +155,7 @@ std::string utf8_to_console(const std::string& value) {
         nullptr);
 
     if (output_size == 0) {
-        return value;
+        return repaired;
     }
 
     std::string converted(static_cast<std::size_t>(output_size), '\\0');
@@ -55,7 +168,7 @@ std::string utf8_to_console(const std::string& value) {
             output_size,
             nullptr,
             nullptr) == 0) {
-        return value;
+        return repaired;
     }
 
     return converted;
