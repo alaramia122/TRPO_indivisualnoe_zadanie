@@ -1,6 +1,8 @@
 #include "Header.h"
 
+// Отображаем статистику анализа и подробный список обнаруженных проблем.
 void show_analysis_result(const HtmlAnalysisResult& result) {
+    // Очищаем консоль перед выводом результата отдельным экраном.
     system("cls");
 
     std::cout
@@ -24,10 +26,12 @@ void show_analysis_result(const HtmlAnalysisResult& result) {
     std::cout << "Диагностики:            "
               << result.diagnostics.size() << "\n";
 
+    // Пустой список означает, что в рамках поддерживаемого подмножества ошибок не найдено.
     if (result.diagnostics.empty()) {
         std::cout
             << "В пределах поддерживаемого подмножества HTML ошибки не обнаружены.\n";
     } else {
+        // Выводим каждую диагностику с категорией и координатами из исходного файла.
         for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
             std::cout << "[" << diagnostic.category << "] строка "
                       << diagnostic.line << ", столбец "
@@ -37,5 +41,6 @@ void show_analysis_result(const HtmlAnalysisResult& result) {
     }
 
     std::cout << "\nНажмите любую клавишу для возврата...\n";
+    // Ожидаем нажатия клавиши, прежде чем вернуть пользователя к меню.
     input_data_reader(true, false, false);
 }
