@@ -236,8 +236,15 @@ collect_document_information(const HtmlAnalysisResult& result) {
             if (token.name == "img") {
                 const std::string alt = normalize_text(decode_html_entities(
                     get_attribute_value(token, "alt")));
-                const std::string src = get_attribute_value(token, "src");
-                if (!alt.empty() || !src.empty()) {
+                std::string src = get_attribute_value(token, "src");
+                if (src.empty()) {
+                    src = get_attribute_value(token, "srcset");
+                }
+
+                // Скрытый счётчик аналитики не относится к содержимому страницы.
+                const bool tracking_pixel =
+                    src.find("mc.yandex.ru/watch") != std::string::npos;
+                if ((!alt.empty() || !src.empty()) && !tracking_pixel) {
                     std::string image_info = alt.empty()
                         ? "изображение"
                         : utf8_to_console(alt);
