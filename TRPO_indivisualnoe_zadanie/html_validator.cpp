@@ -8,7 +8,7 @@ const std::vector<std::string> void_elements = {
     "input", "link", "meta", "param", "source", "track", "wbr"
 };
 
-// Координаты открытия сохраняются, чтобы указать точное место незакрытого элемента.
+// Координаты открытия сохраняются для указания места элемента, ожидающего закрытия.
 struct OpenElement {
     std::string name;
     std::size_t line;
@@ -95,7 +95,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
         });
 
         // Снимаем ошибочно вложенные элементы до найденной пары.
-        // Снимаем незакрытые вложенные элементы до найденной открывающей пары.
+        // Снимаем вложенные элементы, ожидающие закрытия, до найденной открывающей пары.
         while (!stack.empty() && stack.back().name != token.name) {
             // Сначала сохраняем ссылку на вершину, чтобы сформировать диагностику до удаления.
             const OpenElement& unclosed = stack.back();
@@ -118,7 +118,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
         }
     }
 
-    // Оставшиеся элементы так и не встретили закрывающий тег до конца документа.
+    // Оставшиеся элементы ожидают закрывающий тег к концу документа.
     for (const OpenElement& element : stack) {
         result.diagnostics.push_back({
             "Структурная ошибка",
