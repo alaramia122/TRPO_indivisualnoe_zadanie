@@ -60,6 +60,7 @@ void show_document_information(const HtmlAnalysisResult& result) {
     std::string text_buffer;
     std::string active_link;
     std::string link_href;
+    bool collecting_link = false;
     std::vector<std::string> headings;
     std::vector<std::string> links;
     std::vector<std::string> images;
@@ -88,6 +89,7 @@ void show_document_information(const HtmlAnalysisResult& result) {
                 token.type == HtmlTokenType::OpenTag) {
                 active_link.clear();
                 link_href = get_attribute_value(token, "href");
+                collecting_link = true;
             }
 
             if (active_text_tag.empty() &&
@@ -103,13 +105,13 @@ void show_document_information(const HtmlAnalysisResult& result) {
                 text_buffer += token.raw_text;
             }
 
-            if (!link_href.empty() || !active_link.empty()) {
+            if (collecting_link) {
                 active_link += token.raw_text;
             }
         }
 
         if (token.type == HtmlTokenType::CloseTag) {
-            if (token.name == "a" && (!link_href.empty() || !active_link.empty())) {
+            if (token.name == "a" && collecting_link) {
                 const std::string label = normalize_text(active_link);
                 std::string link_info = label.empty() ? link_href : label;
                 if (!link_href.empty() && !label.empty()) {
@@ -118,6 +120,7 @@ void show_document_information(const HtmlAnalysisResult& result) {
                 links.push_back(link_info);
                 active_link.clear();
                 link_href.clear();
+                collecting_link = false;
             }
 
             if (!active_text_tag.empty() && token.name == active_text_tag) {
