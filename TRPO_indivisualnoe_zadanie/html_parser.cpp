@@ -7,7 +7,6 @@ namespace {
 class PositionIndex {
 public:
     // Подготавливаем префиксные суммы и начала строк.
-    // Конструктор заранее выделяет таблицу координат для всех смещений исходного текста.
     explicit PositionIndex(const std::string& source) : codepoint_prefix_(source.size() + 1,
          0) {
         // Первая строка начинается с нулевого смещения.
@@ -41,7 +40,6 @@ public:
         }
     }
     // Возвращаем координаты для смещения.
-    // Преобразуем байтовое смещение в координаты строки и столбца за логарифмическое время.
     std::pair<std::size_t,
          std::size_t> at(std::size_t offset) const {
         // Ограничиваем смещение размером исходного текста.
@@ -73,7 +71,6 @@ private:
 };
 
 // Нормализуем имя тега.
-// Нормализуем ASCII-имя тега; HTML-имена тегов не зависят от регистра.
 std::string lower_ascii(std::string value) {
     // Переводим латиницу в нижний регистр.
     std::transform(value.begin(),
@@ -86,12 +83,10 @@ std::string lower_ascii(std::string value) {
 
 }
 // Проверяем символ имени тега или атрибута.
-// Проверяем, может ли байт участвовать в имени тега или атрибута.
 bool name_char(char ch) { const unsigned char c = static_cast<unsigned char>(ch);
      return std::isalnum(c) || ch == '-' || ch == '_' || ch == ':' || c >= 128;
      }
 // Добавляем сообщение с координатами.
-// Формируем унифицированную диагностику с координатами исходного текста.
 void diagnostic(HtmlAnalysisResult& result,
      const std::string& category,
      const std::string& message,
@@ -127,7 +122,6 @@ bool is_self_closing(const std::string& inside,
         while (cursor < inside.size() && name_char(inside[cursor])) ++cursor;
 
         // Пропускаем неожиданный символ, не допуская зацикливания.
-        // Без имени токен нельзя безопасно классифицировать как тег, поэтому сохраняем диагностику.
         if (cursor == name_start) { ++cursor;
              continue;
              }
@@ -251,7 +245,6 @@ void parse_html(const std::string& source,
             std::size_t declaration_end = i + 2;
 
             // Ищем > вне кавычек.
-                // Декларация заканчивается на > только вне одинарных и двойных кавычек.
             for (; declaration_end < source.size(); ++declaration_end) { const char ch = source[declaration_end];
                  // Кавычки одного типа переключают состояние только вне кавычек другого типа.
                  if (ch == '\'' && !double_quote) single_quote = !single_quote;
@@ -281,7 +274,6 @@ void parse_html(const std::string& source,
 
         }
         // Обрабатываем текст вне тегов.
-        // Если текущий байт не открывает разметку, читаем текст до следующего знака <.
         if (source[i] != '<') {
             // Ищем следующую разметку.
             const std::size_t end = source.find('<',
@@ -303,8 +295,8 @@ void parse_html(const std::string& source,
              std::size_t end = i + 1;
 
         // Ищем > вне кавычек.
-            // Символ > внутри атрибута в кавычках не завершает тег.
-            for (; end < source.size(); ++end) { const char ch = source[end];
+        // Символ > внутри атрибута в кавычках не завершает тег.
+        for (; end < source.size(); ++end) { const char ch = source[end];
              if (ch == '\'' && !dual) single = !single;
              else if (ch == '"' && !single) dual = !dual;
              else if (ch == '>' && !single && !dual) break;
@@ -365,14 +357,12 @@ void parse_html(const std::string& source,
              cursor - name_start));
 
         // Проверяем остаток закрывающего тега до изменения счётчиков.
-        // Для закрывающего тега атрибуты не разбираются: проверяем только остаток после имени.
         if (closing) {
             // Допускаем пробелы после имени.
             std::size_t tail = cursor;
                  while (tail < inside.size() && std::isspace(static_cast<unsigned char>(inside[tail]))) ++tail;
 
             // Не используем некорректный тег для проверки вложенности.
-            // Лишние символы делают закрывающий тег некорректным; валидатор не должен менять стек.
             if (tail != inside.size()) { diagnostic(result,
                  "Лексическая ошибка",
                  "После имени закрывающего тега обнаружены лишние символы.",
@@ -389,7 +379,6 @@ void parse_html(const std::string& source,
         // Разбираем открывающий или самозакрывающийся тег.
         } else {
             // Распознаём маркер самозакрытия вне некавыченных значений.
-            // Решение принимается вспомогательной функцией, учитывающей значения атрибутов.
             const bool self = is_self_closing(inside,
                  cursor);
                  token.type = self ? HtmlTokenType::SelfClosingTag : HtmlTokenType::OpenTag;
@@ -399,7 +388,6 @@ void parse_html(const std::string& source,
                  else ++result.opening_tags;
 
             // Последовательно читаем атрибуты.
-            // После имени открывающего тега последовательно разбираем оставшиеся атрибуты.
             while (cursor < inside.size()) {
                 // Пропускаем разделители.
                 while (cursor < inside.size() &&
@@ -408,12 +396,11 @@ void parse_html(const std::string& source,
                     ++cursor;
                 }
                      // После пропуска пробелов и слешей проверяем, остались ли данные для атрибута.
-                if (cursor >= inside.size()) break;
+                     if (cursor >= inside.size()) break;
 
                 // Считываем имя атрибута и избегаем зацикливания.
                 const std::size_t astart = cursor;
                      while (cursor < inside.size() && name_char(inside[cursor])) ++cursor;
-                     // Неизвестный символ пропускаем, чтобы цикл гарантированно продвинулся.
                      if (cursor == astart) { ++cursor;
                      continue;
                      }
@@ -428,7 +415,6 @@ void parse_html(const std::string& source,
                      }
 
                 // Проверяем наличие значения.
-                // Значение считываем только при наличии знака равенства после имени атрибута.
                 if (cursor < inside.size() && inside[cursor] == '=') {
                     // Пропускаем знак равенства и пробелы.
                     ++cursor;
@@ -439,7 +425,6 @@ void parse_html(const std::string& source,
                          }
 
                     // Читаем значение в кавычках.
-                    // Кавычки ограничивают значение и позволяют включать в него пробелы.
                     if (cursor < inside.size() &&
                         (inside[cursor] == '"' || inside[cursor] == '\'')) {
                         const char quote = inside[cursor++];
@@ -455,7 +440,6 @@ void parse_html(const std::string& source,
                          start);
                          }
                     // Слеш внутри некавыченного значения является частью значения.
-                    // Без кавычек значение продолжается до пробела или конца содержимого тега.
                     else { const std::size_t vstart = cursor;
                          while (cursor < inside.size() &&
                                 !std::isspace(
