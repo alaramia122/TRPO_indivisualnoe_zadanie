@@ -82,6 +82,33 @@ std::string lower_ascii(std::string value) {
     return value;
 
 }
+
+// Ищем закрывающий тег в сыром содержимом script/style без разбора его текста как HTML.
+std::size_t find_raw_text_end(
+    const std::string& source,
+    std::size_t start,
+    const std::string& tag_name) {
+    const std::string closing = "</" + tag_name;
+    for (std::size_t pos = start; pos + closing.size() <= source.size(); ++pos) {
+        bool matches = true;
+        for (std::size_t j = 0; j < closing.size(); ++j) {
+            const unsigned char ch = static_cast<unsigned char>(source[pos + j]);
+            if (static_cast<char>(std::tolower(ch)) != closing[j]) {
+                matches = false;
+                break;
+            }
+        }
+        if (!matches) continue;
+        const std::size_t after_name = pos + closing.size();
+        if (after_name == source.size() ||
+            std::isspace(static_cast<unsigned char>(source[after_name])) ||
+            source[after_name] == '>' || source[after_name] == '/') {
+            return pos;
+        }
+    }
+    return std::string::npos;
+}
+
 // Проверяем символ имени тега или атрибута.
 bool name_char(char ch) { const unsigned char c = static_cast<unsigned char>(ch);
      return std::isalnum(c) || ch == '-' || ch == '_' || ch == ':' || c >= 128;
@@ -459,5 +486,29 @@ void parse_html(const std::string& source,
         // Добавляем токен в исходную последовательность.
         result.tokens.push_back(token);
 
+        // Содержимое script/style сохраняем одним текстовым токеном.
+        // Символы < внутри JavaScript и CSS остаются частью исходного кода.
+        if (token.type == HtmlTokenType::OpenTag &&
+            (token.name == "script" || token.name == "style")) {
+            const std::size_t raw_end = find_raw_text_end(source, i, token.name);
+            const std::size_t raw_start = i;
+            const std::size_t raw_limit =
+                raw_end == std::string::npos ? source.size() : raw_end;
+
+            if (raw_start < raw_limit) {
+                HtmlToken raw_token;
+                raw_token.type = HtmlTokenType::Text;
+                raw_token.offset = raw_start;
+                const auto raw_position = positions.at(raw_start);
+                raw_token.line = raw_position.first;
+                raw_token.column = raw_position.second;
+                raw_token.raw_text = source.substr(raw_start, raw_limit - raw_start);
+                result.tokens.push_back(raw_token);
+                ++result.text_segments;
+            }
+
+            // Продолжаем разбор с закрывающего тега или с конца файла.
+            i = raw_end == std::string::npos ? source.size() : raw_end;
+        }
     }
 }
