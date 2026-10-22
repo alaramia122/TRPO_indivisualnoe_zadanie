@@ -2,7 +2,7 @@
 #include <cstddef> // Подключаем std::size_t для координат и смещений.
 #include <string> // Подключаем строки.
 #include <vector> // Подключаем динамические списки.
-struct Input_data { // Сохраняем контракт исходного utils.cpp.
+struct Input_data { // Поля используются функциями ввода из utils.cpp.
     std::string result; // Храним введённую строку.
     bool Esc_controller = false; // Отмечаем отмену через Esc.
     bool Enter_controller = false; // Отмечаем подтверждение через Enter.
