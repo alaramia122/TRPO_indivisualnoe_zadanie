@@ -5,13 +5,33 @@ namespace {
 // Исправляет распространённый случай текста UTF-8, ошибочно прочитанного как Windows-1251.
 std::string repair_mojibake_utf8(const std::string& value) {
     const bool has_mojibake_marker =
+        value.find("Р ") != std::string::npos ||
         value.find("Рµ") != std::string::npos ||
         value.find("Рґ") != std::string::npos ||
         value.find("Р°") != std::string::npos ||
         value.find("Рє") != std::string::npos ||
+        value.find("РЅ") != std::string::npos ||
+        value.find("Рџ") != std::string::npos ||
+        value.find("РЇ") != std::string::npos ||
+        value.find("РЈ") != std::string::npos ||
+        value.find("Рќ") != std::string::npos ||
+        value.find("РЎ") != std::string::npos ||
+        value.find("Рљ") != std::string::npos ||
+        value.find("Р¤") != std::string::npos ||
+        value.find("Рђ") != std::string::npos ||
+        value.find("Рё") != std::string::npos ||
+        value.find("Рѕ") != std::string::npos ||
+        value.find("Рї") != std::string::npos ||
+        value.find("Р±") != std::string::npos ||
+        value.find("Р»") != std::string::npos ||
+        value.find("Р·") != std::string::npos ||
+        value.find("Рј") != std::string::npos ||
         value.find("С‚") != std::string::npos ||
         value.find("СЂ") != std::string::npos ||
-        value.find("СЏ") != std::string::npos;
+        value.find("СЏ") != std::string::npos ||
+        value.find("Сѓ") != std::string::npos ||
+        value.find("СЃ") != std::string::npos ||
+        value.find("В ") != std::string::npos;
 
     if (!has_mojibake_marker) {
         return value;
@@ -29,7 +49,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
         return value;
     }
 
-    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\\0');
+    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\0');
     if (MultiByteToWideChar(
             CP_UTF8,
             MB_ERR_INVALID_CHARS,
@@ -54,7 +74,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
         return value;
     }
 
-    std::string legacy_bytes(static_cast<std::size_t>(legacy_size), '\\0');
+    std::string legacy_bytes(static_cast<std::size_t>(legacy_size), '\0');
     if (WideCharToMultiByte(
             1251,
             0,
@@ -80,7 +100,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
     }
 
     std::wstring repaired_wide(
-        static_cast<std::size_t>(repaired_size), L'\\0');
+        static_cast<std::size_t>(repaired_size), L'\0');
     if (MultiByteToWideChar(
             CP_UTF8,
             MB_ERR_INVALID_CHARS,
@@ -106,7 +126,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
     }
 
     std::string repaired(
-        static_cast<std::size_t>(repaired_utf8_size), '\\0');
+        static_cast<std::size_t>(repaired_utf8_size), '\0');
     if (WideCharToMultiByte(
             CP_UTF8,
             0,
@@ -141,7 +161,7 @@ std::string utf8_to_console(const std::string& value) {
         return repaired;
     }
 
-    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\\0');
+    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\0');
     if (MultiByteToWideChar(
             CP_UTF8,
             MB_ERR_INVALID_CHARS,
@@ -166,7 +186,7 @@ std::string utf8_to_console(const std::string& value) {
         return repaired;
     }
 
-    std::string converted(static_cast<std::size_t>(output_size), '\\0');
+    std::string converted(static_cast<std::size_t>(output_size), '\0');
     if (WideCharToMultiByte(
             1251,
             0,
@@ -206,11 +226,28 @@ std::string get_attribute_value(
 
 // Убирает пробелы по краям и сводит последовательности пробелов к одному.
 std::string normalize_text(const std::string& value) {
+    // Исправляем повреждённую кодировку до обработки пробельных символов.
+    const std::string repaired = repair_mojibake_utf8(value);
     std::string result;
     bool pending_space = false;
 
-    for (unsigned char ch : value) {
-        if (std::isspace(ch)) {
+    for (std::size_t i = 0; i < repaired.size();) {
+        // Неразрывный пробел в UTF-8 занимает два байта.
+        if (i + 1 < repaired.size() &&
+            static_cast<unsigned char>(repaired[i]) == 0xC2 &&
+            static_cast<unsigned char>(repaired[i + 1]) == 0xA0) {
+            pending_space = !result.empty();
+            i += 2;
+            continue;
+        }
+
+        const unsigned char ch =
+            static_cast<unsigned char>(repaired[i++]);
+        const bool is_ascii_space =
+            ch == ' ' || ch == '\t' || ch == '\n' ||
+            ch == '\r' || ch == '\f' || ch == '\v';
+
+        if (is_ascii_space) {
             pending_space = !result.empty();
             continue;
         }
