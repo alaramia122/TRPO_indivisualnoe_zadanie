@@ -4,7 +4,7 @@ void show_analysis_result(const HtmlAnalysisResult& result) {
     system("cls");
 
     std::cout
-        << "=======================================================================================================================\n";
+        << std::string(100, '=') << "\n";
     std::cout
         << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n";
 
