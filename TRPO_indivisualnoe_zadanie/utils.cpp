@@ -1,4 +1,4 @@
-﻿﻿#include "Header.h"
+﻿#include "Header.h"
 
 bool contains_only(std::string const& str, char flag) {
     switch (flag)
