@@ -44,12 +44,12 @@ void validate_html_structure(HtmlAnalysisResult& result) {
             continue;
         }
 
-        // Пустой стек указывает на закрывающий тег без предшествующего открытия.
+        // Пустой стек показывает, что текущий закрывающий тег встретился первым.
         if (stack.empty()) {
             result.diagnostics.push_back({
                 "Структурная ошибка",
                 "Закрывающий тег </" + token.name +
-                    "> встретился без предшествующего открывающего тега.",
+                    "> требует соответствующего открывающего тега.",
                 token.line,
                 token.column
             });
@@ -72,12 +72,12 @@ void validate_html_structure(HtmlAnalysisResult& result) {
                 return element.name == token.name;
             });
 
-        // Поиск по стеку определяет закрывающий тег без соответствующего открытия.
+        // Результат поиска описывает лишний закрывающий тег.
         if (matching == stack.rend()) {
             result.diagnostics.push_back({
                 "Структурная ошибка",
                 "Закрывающий тег </" + token.name +
-                    "> встретился без соответствующей открывающей пары; ожидался закрывающий "
+                    "> требует соответствующую открывающую пару; текущий открытый элемент — "
                     "тег для <" + stack.back().name + ">.",
                 token.line,
                 token.column
