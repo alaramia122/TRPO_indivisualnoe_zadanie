@@ -1,8 +1,10 @@
+// Защищаем объявления модуля.
 #pragma once
 
+// Используем строковые пути и содержимое.
 #include <string>
 
-// Читает файл и возвращает статус операции.
+// Читаем файл и возвращаем статус.
 bool read_text_file(
     const std::string& path,
     std::string& content,
