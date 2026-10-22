@@ -1,13 +1,15 @@
+// utils.h
+// Вспомогательные функции для обработки строк и ввода.
 #pragma once
 
 #include <string>
 #include <vector>
 #include "Struct.h"
 
-// Проверяет, содержит ли строка только допустимые символы.
+// Проверка, состоит ли строка только из определённых символов.
 bool contains_only(const std::string& str, char flag);
 
-// Разделяет строку по заданному символу.
+// Режет строку по разделителю.
 std::vector<std::string> Cutter_of_string(
     const std::string& stroka,
     char razdel);
@@ -17,7 +19,7 @@ std::vector<char> Cutter_of_string_char(
     const std::string& stroka,
     char razdel);
 
-// Считывает ввод с обработкой Enter и Esc.
+// Универсальный ввод с клавиатуры.
 Input_data input_data_reader(
     bool loop_until_enter,
     bool echo_input = true,
