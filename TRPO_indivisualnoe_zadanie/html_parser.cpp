@@ -163,7 +163,7 @@ bool is_self_closing(const std::string& inside,
 
             // Слеш без пробела остаётся частью значения.
             while (cursor < inside.size() &&
-                   std::isspace(
+                   !std::isspace(
                        static_cast<unsigned char>(inside[cursor]))) {
                 ++cursor;
             }
