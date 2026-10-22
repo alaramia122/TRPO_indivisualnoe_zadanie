@@ -1,84 +1,171 @@
-#include "Header.h" // Подключаем объявления проекта.
-void show_start_window() { // Показываем стартовый экран.
-    system("cls"); // Очищаем консоль Windows.
-    system("color F0"); // Устанавливаем светлое оформление.
-    std::cout << "\n=======================================================================================================================\n";
-    std::cout << "                                      АНАЛИЗАТОР СТРУКТУРЫ HTML-ДОКУМЕНТОВ\n"; // Выводим название программы.
-    std::cout << "                                      Индивидуальная лабораторная работа по ТРПО\n"; // Выводим назначение программы.
-    std::cout << "=======================================================================================================================\n"; // Завершаем рамку.
-    std::cout << "Входные файлы: SourceTexts (.html, .htm)\n"; // Показываем каталог входных файлов.
-    std::cout << "Проверка выполняется для поддерживаемого подмножества HTML.\n\n"; // Уточняем область проверки.
-    std::cout << "Нажмите любую клавишу для продолжения...\n"; // Подсказываем действие пользователя.
-    input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
+#include "Header.h"
+
+void show_start_window() {
+    system("cls");
+
+    std::cout
+        << "\n=======================================================================================================================\n";
+    std::cout
+        << "                                      АНАЛИЗАТОР СТРУКТУРЫ HTML-ДОКУМЕНТОВ\n";
+    std::cout
+        << "                                      Индивидуальная лабораторная работа по ТРПО\n";
+    std::cout
+        << "=======================================================================================================================\n";
+    std::cout << "Входные файлы: SourceTexts (.html, .htm)\n";
+    std::cout
+        << "Проверка выполняется для поддерживаемого подмножества HTML.\n\n";
+    std::cout << "Нажмите любую клавишу для продолжения...\n";
+
+    input_data_reader(true, false, false);
 }
-int show_main_menu() { // Показываем главное меню.
-    while (true) { // Повторяем меню до допустимого выбора.
-        system("cls"); // Очищаем консоль.
-        std::cout << "=======================================================================================================================\n";
-        std::cout << "                                             ГЛАВНОЕ МЕНЮ\n"; // Выводим заголовок меню.
-        std::cout << "=======================================================================================================================\n";
-        std::cout << "1. Проверить HTML-файл\n"; // Предлагаем проверить файл.
-        std::cout << "2. Информация о программе\n"; // Предлагаем показать информацию.
-        std::cout << "3. Выход\n"; // Предлагаем завершить работу.
-        std::cout << "=======================================================================================================================\n";
-        std::cout << "Ваш выбор > "; // Приглашаем ввести пункт.
-        Input_data input = input_data_reader(true, true, false); // Получаем выбор существующим механизмом ввода.
-        if (input.Esc_controller) return 3; // Считаем Esc командой выхода.
-        if (input.Enter_controller && !input.result.empty() && contains_only(input.result, 'ц')) { // Проверяем числовой ввод.
-            if (input.result == "1") return 1; // Возвращаем команду анализа.
-            if (input.result == "2") return 2; // Возвращаем команду информации.
-            if (input.result == "3") return 3; // Возвращаем команду выхода.
+
+int show_main_menu() {
+    while (true) {
+        system("cls");
+
+        std::cout
+            << "=======================================================================================================================\n";
+        std::cout << "                                             ГЛАВНОЕ МЕНЮ\n";
+        std::cout
+            << "=======================================================================================================================\n";
+        std::cout << "1. Проверить HTML-файл\n";
+        std::cout << "2. Информация о программе\n";
+        std::cout << "3. Выход\n";
+        std::cout
+            << "=======================================================================================================================\n";
+        std::cout << "Ваш выбор > ";
+
+        Input_data input = input_data_reader(true, true, false);
+
+        if (input.Esc_controller) {
+            return 3;
+        }
+
+        if (!input.Enter_controller ||
+            input.result.empty() ||
+            !contains_only(input.result, 'ц')) {
+            continue;
+        }
+
+        if (input.result == "1") {
+            return 1;
+        }
+
+        if (input.result == "2") {
+            return 2;
+        }
+
+        if (input.result == "3") {
+            return 3;
         }
     }
 }
-std::string choose_source_file() { // Предлагаем выбрать HTML-файл.
-    while (true) { // Повторяем выбор при некорректном вводе.
-        system("cls"); // Очищаем консоль.
-        std::vector<std::string> files; // Создаём список подходящих файлов.
-        std::cout << "=======================================================================================================================\n";
-        std::cout << "                                             ВЫБОР HTML-ФАЙЛА\n"; // Выводим заголовок.
-        std::cout << "Каталог: SourceTexts\n"; // Показываем каталог поиска.
-        if (!fs::exists("SourceTexts") || !fs::is_directory("SourceTexts")) { // Проверяем наличие каталога.
-            std::cout << "Каталог SourceTexts не найден. Создайте его и добавьте HTML-файлы.\n"; // Объясняем проблему.
-            input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
-            return ""; // Возвращаем пустую строку при ошибке.
+
+std::string choose_source_file() {
+    while (true) {
+        system("cls");
+
+        std::vector<std::string> files;
+
+        std::cout
+            << "=======================================================================================================================\n";
+        std::cout << "                                             ВЫБОР HTML-ФАЙЛА\n";
+        std::cout << "Каталог: SourceTexts\n";
+
+        if (!fs::exists("SourceTexts") ||
+            !fs::is_directory("SourceTexts")) {
+            std::cout
+                << "Каталог SourceTexts не найден. Создайте его и добавьте HTML-файлы.\n";
+
+            input_data_reader(true, false, false);
+            return "";
         }
-        for (const auto& entry : fs::directory_iterator("SourceTexts")) { // Перебираем содержимое каталога.
-            if (!entry.is_regular_file()) continue; // Пропускаем каталоги.
-            std::string extension = entry.path().extension().string(); // Получаем расширение файла.
-            std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); }); // Нормализуем регистр расширения.
-            if (extension == ".html" || extension == ".htm") files.push_back(entry.path().filename().string()); // Добавляем подходящие файлы.
-        } // Завершаем поиск файлов.
-        std::sort(files.begin(), files.end()); // Сортируем список для стабильного порядка.
-        if (files.empty()) { // Проверяем, есть ли файлы для анализа.
-            std::cout << "В SourceTexts нет файлов .html или .htm.\nНажмите любую клавишу для возврата...\n"; // Сообщаем об отсутствии файлов.
-            input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
-            return ""; // Возвращаемся в меню.
+
+        for (const auto& entry : fs::directory_iterator("SourceTexts")) {
+            if (!entry.is_regular_file()) {
+                continue;
+            }
+
+            std::string extension = entry.path().extension().string();
+
+            std::transform(
+                extension.begin(),
+                extension.end(),
+                extension.begin(),
+                [](unsigned char ch) {
+                    return static_cast<char>(std::tolower(ch));
+                });
+
+            if (extension == ".html" || extension == ".htm") {
+                files.push_back(entry.path().filename().string());
+            }
         }
-        for (std::size_t i = 0; i < files.size(); ++i) std::cout << i + 1 << ". " << files[i] << "\n"; // Выводим нумерованный список.
-        std::cout << "Введите номер файла (Esc — отмена) > "; // Приглашаем выбрать файл.
-        Input_data input = input_data_reader(true, true, false); // Читаем номер файла.
-        if (input.Esc_controller) return ""; // Обрабатываем отмену выбора.
-        if (input.Enter_controller && !input.result.empty() && contains_only(input.result, 'ц')) { // Проверяем числовой ввод.
-            try { // Защищаем преобразование строки в число.
-                const unsigned long choice = std::stoul(input.result); // Преобразуем номер в число.
-                if (choice >= 1 && choice <= files.size()) return files[choice - 1]; // Возвращаем имя выбранного файла.
-            } catch (const std::exception&) { /* Ошибка преобразования приводит к повторному запросу. */ } // Обрабатываем ошибку ввода.
+
+        std::sort(files.begin(), files.end());
+
+        if (files.empty()) {
+            std::cout
+                << "В SourceTexts нет файлов .html или .htm.\n"
+                << "Нажмите любую клавишу для возврата...\n";
+
+            input_data_reader(true, false, false);
+            return "";
+        }
+
+        for (std::size_t i = 0; i < files.size(); ++i) {
+            std::cout << i + 1 << ". " << files[i] << "\n";
+        }
+
+        std::cout << "Введите номер файла (Esc — отмена) > ";
+
+        Input_data input = input_data_reader(true, true, false);
+
+        if (input.Esc_controller) {
+            return "";
+        }
+
+        if (!input.Enter_controller ||
+            input.result.empty() ||
+            !contains_only(input.result, 'ц')) {
+            continue;
+        }
+
+        try {
+            const unsigned long choice = std::stoul(input.result);
+
+            if (choice >= 1 && choice <= files.size()) {
+                return files[choice - 1];
+            }
+        } catch (const std::exception&) {
+            // При некорректном номере повторяем запрос.
         }
     }
 }
-void show_about_screen() { // Показываем информацию о программе.
-    system("cls"); // Очищаем консоль.
-    std::cout << "=======================================================================================================================\n";
-    std::cout << "                                         ИНФОРМАЦИЯ О ПРОГРАММЕ\n"; // Выводим заголовок.
-    std::cout << "Программа вручную разбирает теги, атрибуты, комментарии и текст.\n"; // Описываем разбор.
-    std::cout << "Вложенность парных тегов проверяется с помощью стека.\n"; // Описываем алгоритм проверки.
-    std::cout << "Это проверка поддерживаемого подмножества HTML, а не полная валидация HTML5.\n"; // Уточняем ограничение.
-    std::cout << "Нажмите любую клавишу для возврата...\n"; // Подсказываем действие.
-    input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
+
+void show_about_screen() {
+    system("cls");
+
+    std::cout
+        << "=======================================================================================================================\n";
+    std::cout << "                                         ИНФОРМАЦИЯ О ПРОГРАММЕ\n";
+    std::cout
+        << "Программа вручную разбирает теги, атрибуты, комментарии и текст.\n";
+    std::cout
+        << "Вложенность парных тегов проверяется с помощью стека.\n";
+    std::cout
+        << "Это проверка поддерживаемого подмножества HTML, а не полная валидация HTML5.\n";
+    std::cout << "Нажмите любую клавишу для возврата...\n";
+
+    input_data_reader(true, false, false);
 }
-void show_completion_screen(const std::string& filename, std::size_t errors) { // Показываем итог анализа.
-    std::cout << "\nФайл: " << filename << "\nКоличество диагностик: " << errors << "\n"; // Выводим краткую сводку.
-    std::cout << "Нажмите любую клавишу для возврата в главное меню...\n"; // Подсказываем действие.
-    input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
+
+void show_completion_screen(
+    const std::string& filename,
+    std::size_t errors) {
+    std::cout << "\nФайл: " << filename
+              << "\nКоличество диагностик: " << errors << "\n";
+    std::cout
+        << "Нажмите любую клавишу для возврата в главное меню...\n";
+
+    input_data_reader(true, false, false);
 }
