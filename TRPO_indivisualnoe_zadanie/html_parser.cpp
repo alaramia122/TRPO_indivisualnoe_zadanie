@@ -37,7 +37,7 @@ bool is_self_closing(const std::string& inside, std::size_t cursor) { // Опр�
     if (inside.empty() || inside.back() != '/') return false; // Самозакрывающийся маркер должен непосредственно предшествовать >.
     while (cursor < inside.size()) { // Просматриваем остаток открывающего тега.
         while (cursor < inside.size() && std::isspace(static_cast<unsigned char>(inside[cursor]))) ++cursor; // Пропускаем пробелы между атрибутами.
-        if (cursor >= inside.size() - 1 && inside[cursor] == '/') return true; // Слеш вне значения атрибута является маркером самозакрытия.
+        if (cursor == inside.size() - 1 && inside[cursor] == '/') return true; // Слеш вне значения атрибута является маркером самозакрытия.
         const std::size_t name_start = cursor; // Запоминаем начало имени атрибута.
         while (cursor < inside.size() && name_char(inside[cursor])) ++cursor; // Пропускаем имя атрибута.
         if (cursor == name_start) { ++cursor; continue; } // Пропускаем неожиданный символ, не допуская зацикливания.
