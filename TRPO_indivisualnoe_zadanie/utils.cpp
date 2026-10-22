@@ -130,6 +130,7 @@ Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
         default:
             data.result += ch;
 
+            // Отображаем обычный символ только при включённом выводе введённого текста.
             if (flag2) {
                 std::cout << ch;
             }
