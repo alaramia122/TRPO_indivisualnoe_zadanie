@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <clocale>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <fstream>
