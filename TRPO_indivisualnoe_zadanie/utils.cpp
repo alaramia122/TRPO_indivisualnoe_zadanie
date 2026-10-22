@@ -27,12 +27,11 @@ bool contains_only(std::string const& str, char flag) {
 
     case 'з':
         // Исключаем знаки конца предложения.
-        return str.find_first_of(".!?\\"'…") == std::string::npos;
+        return str.find_first_of(R"(.!?"'… )") == std::string::npos;
 
     case 'с':
         // Исключаем специальные символы и знаки пунктуации.
-        return str.find_first_of(
-            ",,></|=+&^%$#@*(){}[]№;:'»«\\\\") ==
+        return str.find_first_of(R"(,,></|=+&^%$#@*(){}[]№;:'»«\)") ==
             std::string::npos;
 
     default:
@@ -91,7 +90,7 @@ Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
         case 8:
             if (!data.result.empty()) {
                 data.result.pop_back();
-                std::cout << "\\b \\b";
+                std::cout << "\b \b";
             }
             break;
 
