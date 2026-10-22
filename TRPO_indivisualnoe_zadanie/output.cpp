@@ -4,8 +4,16 @@ namespace {
 
 // Исправляет распространённый случай текста UTF-8, ошибочно прочитанного как Windows-1251.
 std::string repair_mojibake_utf8(const std::string& value) {
-    if (value.find("Р") == std::string::npos &&
-        value.find("С") == std::string::npos) {
+    const bool has_mojibake_marker =
+        value.find("Рµ") != std::string::npos ||
+        value.find("Рґ") != std::string::npos ||
+        value.find("Р°") != std::string::npos ||
+        value.find("Рє") != std::string::npos ||
+        value.find("С‚") != std::string::npos ||
+        value.find("СЂ") != std::string::npos ||
+        value.find("СЏ") != std::string::npos;
+
+    if (!has_mojibake_marker) {
         return value;
     }
 
