@@ -51,7 +51,7 @@ int show_main_menu() {
         }
 
         // Выбор обрабатывается после Enter и проверки числового формата строки.
-        // При незавершённом вводе или посторонних символах запрашиваем номер повторно.
+        // При вводе с посторонними символами повторяем запрос.
         if (!input.Enter_controller ||
             input.result.empty() ||
             !contains_only(input.result, 'ц')) {
@@ -77,7 +77,7 @@ int show_main_menu() {
 
 // Возвращает имя выбранного HTML-файла; пустая строка обозначает отмену.
 std::string choose_source_file() {
-    // Повторяем выбор, пока пользователь не укажет существующий файл или не отменит действие.
+    // Повторяем выбор до указания существующего файла или отмены действия.
     while (true) {
         system("cls");
 
@@ -93,13 +93,13 @@ std::string choose_source_file() {
         if (!fs::exists("SourceTexts") ||
             !fs::is_directory("SourceTexts")) {
             std::cout
-                << "Каталог SourceTexts не найден. Создайте его и добавьте HTML-файлы.\n";
+                << "Каталог SourceTexts: проверьте путь и добавьте HTML-файлы.\n";
 
             input_data_reader(true, false, false);
             return "";
         }
 
-        // Перебираем содержимое каталога, фильтруя неподходящие объекты и расширения.
+        // Перебираем содержимое каталога и отбираем обычные HTML-файлы.
         for (const auto& entry : fs::directory_iterator("SourceTexts")) {
             // В список выбора включаем обычные файлы каталога.
             if (!entry.is_regular_file()) {
@@ -129,7 +129,7 @@ std::string choose_source_file() {
         // При пустом списке подходящих файлов возвращаемся в главное меню.
         if (files.empty()) {
             std::cout
-                << "В SourceTexts нет файлов .html или .htm.\n"
+                << "Добавьте в SourceTexts файлы с расширением .html или .htm.\n"
                 << "Нажмите любую клавишу для возврата...\n";
 
             input_data_reader(true, false, false);
