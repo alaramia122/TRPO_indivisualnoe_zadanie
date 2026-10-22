@@ -215,7 +215,7 @@ void parse_html(const std::string& source,
             if (end == std::string::npos) { token.raw_text = source.substr(i);
                  diagnostic(result,
                  "Лексическая ошибка",
-                 "HTML-комментарий не закрыт последовательностью -->.",
+                 "Для HTML-комментария ожидается завершающая последовательность -->.",
                  positions,
                  start);
                  i = source.size();
@@ -258,7 +258,7 @@ void parse_html(const std::string& source,
             if (declaration_end >= source.size()) { token.raw_text = source.substr(i);
                  diagnostic(result,
                  "Лексическая ошибка",
-                 "HTML-декларация не завершена символом >.",
+                 "Для HTML-декларации ожидается завершающий символ >.",
                  positions,
                  start);
                  i = source.size();
@@ -295,7 +295,7 @@ void parse_html(const std::string& source,
              std::size_t end = i + 1;
 
         // Ищем > вне кавычек.
-        // Символ > внутри атрибута в кавычках не завершает тег.
+        // Символ > внутри атрибута в кавычках остаётся частью значения.
         for (; end < source.size(); ++end) { const char ch = source[end];
              if (ch == '\'' && !dual) single = !single;
              else if (ch == '"' && !single) dual = !dual;
@@ -304,7 +304,7 @@ void parse_html(const std::string& source,
         // Обрабатываем незавершённый тег.
         if (end == source.size()) { diagnostic(result,
              "Лексическая ошибка",
-             "Тег не завершён символом >.",
+             "Для тега ожидается завершающий символ >.",
              positions,
              start);
              token.type = HtmlTokenType::Text;
@@ -362,7 +362,7 @@ void parse_html(const std::string& source,
             std::size_t tail = cursor;
                  while (tail < inside.size() && std::isspace(static_cast<unsigned char>(inside[tail]))) ++tail;
 
-            // Не используем некорректный тег для проверки вложенности.
+            // Передаём в проверку вложенности теги с корректной завершающей частью.
             if (tail != inside.size()) { diagnostic(result,
                  "Лексическая ошибка",
                  "После имени закрывающего тега обнаружены лишние символы.",
@@ -435,7 +435,7 @@ void parse_html(const std::string& source,
                          if (cursor < inside.size()) ++cursor;
                          else diagnostic(result,
                          "Лексическая ошибка",
-                         "Значение атрибута не закрыто кавычкой.",
+                         "Для значения атрибута ожидается закрывающая кавычка.",
                          positions,
                          start);
                          }
