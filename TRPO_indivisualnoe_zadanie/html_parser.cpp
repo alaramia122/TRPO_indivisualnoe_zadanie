@@ -423,7 +423,7 @@ void parse_html(const std::string& source,
 
                     // Читаем значение в кавычках.
                     if (cursor < inside.size() &&
-                        (inside[cursor] == '"' || inside[cursor] == '\\'')) {
+                        (inside[cursor] == '"' || inside[cursor] == '\'')) {
                         const char quote = inside[cursor++];
                          const std::size_t vstart = cursor;
                          while (cursor < inside.size() && inside[cursor] != quote) ++cursor;
