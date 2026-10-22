@@ -525,10 +525,201 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
     }
 }
 
+
+// Преобразует строку из кодировки консоли Windows-1251 в UTF-8 для текстового отчёта.
+std::string console_to_utf8(const std::string& value) {
+    if (value.empty()) {
+        return value;
+    }
+
+    const int wide_size = MultiByteToWideChar(
+        1251,
+        0,
+        value.data(),
+        static_cast<int>(value.size()),
+        nullptr,
+        0);
+
+    if (wide_size == 0) {
+        return value;
+    }
+
+    std::wstring wide_text(static_cast<std::size_t>(wide_size), L'\0');
+    if (MultiByteToWideChar(
+            1251,
+            0,
+            value.data(),
+            static_cast<int>(value.size()),
+            wide_text.data(),
+            wide_size) == 0) {
+        return value;
+    }
+
+    const int utf8_size = WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        wide_text.data(),
+        wide_size,
+        nullptr,
+        0,
+        nullptr,
+        nullptr);
+
+    if (utf8_size == 0) {
+        return value;
+    }
+
+    std::string converted(static_cast<std::size_t>(utf8_size), '\0');
+    if (WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide_text.data(),
+            wide_size,
+            converted.data(),
+            utf8_size,
+            nullptr,
+            nullptr) == 0) {
+        return value;
+    }
+
+    return converted;
+}
+
+// Записывает статистику, извлечённые сведения и диагностики в UTF-8-файл.
+bool save_analysis_report(
+    const HtmlAnalysisResult& result,
+    const std::string& source_filename,
+    std::string& saved_path,
+    std::string& error_message) {
+    try {
+        const fs::path output_directory("AnalysisResults");
+        fs::create_directories(output_directory);
+
+        const std::string base_name =
+            fs::path(source_filename).stem().string() + "_analysis";
+        fs::path report_path = output_directory / (base_name + ".txt");
+
+        // Не перезаписываем ранее сохранённый отчёт с таким же именем.
+        std::size_t suffix = 2;
+        while (fs::exists(report_path)) {
+            report_path = output_directory /
+                (base_name + "_" + std::to_string(suffix) + ".txt");
+            ++suffix;
+        }
+
+        std::ofstream report(report_path, std::ios::binary);
+        if (!report.is_open()) {
+            error_message = "Не удалось открыть файл для записи.";
+            return false;
+        }
+
+        // Маркер UTF-8 помогает редакторам корректно определить кодировку отчёта.
+        report.write("\xEF\xBB\xBF", 3);
+        report << console_to_utf8("РЕЗУЛЬТАТ АНАЛИЗА HTML") << "\n";
+        report << std::string(60, '=') << "\n\n";
+        report << console_to_utf8("Исходный файл: ")
+               << console_to_utf8(source_filename) << "\n\n";
+
+        report << console_to_utf8("СТАТИСТИКА") << "\n";
+        report << console_to_utf8("Открывающие теги: ")
+               << result.opening_tags << "\n";
+        report << console_to_utf8("Закрывающие теги: ")
+               << result.closing_tags << "\n";
+        report << console_to_utf8("Самозакрывающиеся теги: ")
+               << result.self_closing_tags << "\n";
+        report << console_to_utf8("Атрибуты: ")
+               << result.attributes << "\n";
+        report << console_to_utf8("Комментарии: ")
+               << result.comments << "\n";
+        report << console_to_utf8("Текстовые фрагменты: ")
+               << result.text_segments << "\n";
+        report << console_to_utf8("Диагностики: ")
+               << result.diagnostics.size() << "\n";
+
+        const auto sections = collect_document_information(result);
+        for (const auto& section : sections) {
+            report << "\n" << console_to_utf8(section.first) << "\n";
+            report << std::string(60, '-') << "\n";
+
+            for (const std::string& value : section.second) {
+                report << "- " << console_to_utf8(value) << "\n";
+            }
+        }
+
+        report << "\n" << console_to_utf8("ДИАГНОСТИКИ") << "\n";
+        report << std::string(60, '-') << "\n";
+        if (result.diagnostics.empty()) {
+            report << console_to_utf8(
+                "Проверка поддерживаемого подмножества HTML завершена успешно.")
+                   << "\n";
+        } else {
+            for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
+                report << "[" << console_to_utf8(diagnostic.category) << "] "
+                       << console_to_utf8("строка ") << diagnostic.line
+                       << console_to_utf8(", столбец ") << diagnostic.column
+                       << ": " << console_to_utf8(diagnostic.message) << "\n";
+            }
+        }
+
+        report.flush();
+        if (!report.good()) {
+            error_message = "При записи отчёта произошла ошибка.";
+            return false;
+        }
+
+        saved_path = report_path.string();
+        return true;
+    } catch (const std::exception&) {
+        error_message = "Не удалось сохранить отчёт из-за ошибки файловой системы.";
+        return false;
+    }
+}
+
+// Предлагает сохранить полный результат анализа в текстовый файл.
+void show_save_prompt(
+    const HtmlAnalysisResult& result,
+    const std::string& source_filename) {
+    while (true) {
+        system("cls");
+        std::cout << std::string(100, '=') << "\n";
+        std::cout << "                                      СОХРАНЕНИЕ РЕЗУЛЬТАТА\n";
+        std::cout << std::string(100, '=') << "\n";
+        std::cout << "Сохранить результат анализа в текстовый файл?\n\n";
+        std::cout << "1. Да, сохранить\n";
+        std::cout << "2. Нет, вернуться в главное меню\n";
+        std::cout << "Ваш выбор > ";
+
+        const int key = _getch();
+        if (key == '1') {
+            std::string saved_path;
+            std::string error_message;
+
+            system("cls");
+            if (save_analysis_report(
+                    result, source_filename, saved_path, error_message)) {
+                std::cout << "Результат сохранён.\nФайл: "
+                          << saved_path << "\n";
+            } else {
+                std::cout << error_message << "\n";
+            }
+
+            std::cout << "\nНажмите любую клавишу для возврата в меню...\n";
+            input_data_reader(true, false, false);
+            return;
+        }
+
+        if (key == '2' || key == 27) {
+            return;
+        }
+    }
+}
+
 }
 
 // Отображает статистику, извлечённые сведения и диагностики HTML.
-void show_analysis_result(const HtmlAnalysisResult& result) {
+void show_analysis_result(
+    const HtmlAnalysisResult& result,
+    const std::string& source_filename) {
     const auto sections = collect_document_information(result);
     std::size_t section_index = 0;
     std::size_t value_index = 0;
@@ -576,6 +767,5 @@ void show_analysis_result(const HtmlAnalysisResult& result) {
         }
     }
 
-    std::cout << "\nНажмите любую клавишу для возврата...\n";
-    input_data_reader(true, false, false);
+    show_save_prompt(result, source_filename);
 }
