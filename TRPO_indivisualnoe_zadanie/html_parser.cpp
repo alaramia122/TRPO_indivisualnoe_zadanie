@@ -59,7 +59,7 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // Вы
                 if (cursor < inside.size() && inside[cursor] == '=') { // Проверяем наличие значения.
                     ++cursor; while (cursor < inside.size() && std::isspace(static_cast<unsigned char>(inside[cursor]))) ++cursor; // Пропускаем знак равенства и пробелы.
                     if (cursor < inside.size() && (inside[cursor] == '"' || inside[cursor] == '\'')) { const char quote = inside[cursor++]; const std::size_t vstart = cursor; while (cursor < inside.size() && inside[cursor] != quote) ++cursor; attr.value = inside.substr(vstart, cursor - vstart); if (cursor < inside.size()) ++cursor; else diagnostic(result, "Лексическая ошибка", "Значение атрибута не закрыто кавычкой.", source, start); } // Читаем значение в кавычках.
-                    else { const std::size_t vstart = cursor; while (cursor < inside.size() && !std::isspace(static_cast<unsigned char>(inside[cursor])) && inside[cursor] != '/') ++cursor; attr.value = inside.substr(vstart, cursor - vstart); } // Читаем некавыченное значение.
+                    else { const std::size_t vstart = cursor; while (cursor < inside.size() && !std::isspace(static_cast<unsigned char>(inside[cursor])) && !(inside[cursor] == '/' && inside.find_last_not_of(" \t\r\n") == cursor)) ++cursor; attr.value = inside.substr(vstart, cursor - vstart); } // Читаем некавыченное значение.
                 } // Завершаем чтение значения.
                 token.attributes.push_back(attr); ++result.attributes; // Сохраняем атрибут и увеличиваем счётчик.
             } // Завершаем разбор атрибутов.

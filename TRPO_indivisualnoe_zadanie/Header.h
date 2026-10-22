@@ -7,6 +7,7 @@
 #include <sstream> // Подключаем строковые потоки для utils.cpp.
 #include <string> // Подключаем строки.
 #include <vector> // Подключаем динамические списки.
+#include <utility> // Подключаем std::pair для координат исходного текста.
 #include <Windows.h> // Сохраняем Windows-специфику исходного проекта.
 #include <conio.h> // Подключаем _getch() для неизменяемого utils.cpp.
 #include "Struct.h" // Подключаем общие структуры.
