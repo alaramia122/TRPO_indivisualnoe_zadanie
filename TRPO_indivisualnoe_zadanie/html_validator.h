@@ -1,6 +1,8 @@
+// Защищаем интерфейс валидатора.
 #pragma once
 
+// Подключаем структуру результата.
 #include "Struct.h"
 
-// Проверяет вложенность парных тегов.
+// Проверяем соответствие парных тегов.
 void validate_html_structure(HtmlAnalysisResult& result);
