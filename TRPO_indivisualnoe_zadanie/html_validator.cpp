@@ -3,7 +3,7 @@ namespace { // Ограничиваем вспомогательные элем�
 const std::vector<std::string> void_elements = { "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr" }; // Перечисляем элементы без закрывающего тега.
 struct OpenElement { std::string name; std::size_t line; std::size_t column; }; // Храним имя и координаты открытого элемента.
 bool is_void_element(const std::string& name) { return std::find(void_elements.begin(), void_elements.end(), name) != void_elements.end(); } // Проверяем void-элемент.
-} // Завершаем вспомогательные объявления.
+}
 void validate_html_structure(HtmlAnalysisResult& result) { // Проверяем вложенность с помощью стека.
     std::vector<OpenElement> stack; // Создаём стек открытых тегов.
     for (const HtmlToken& token : result.tokens) { // Обрабатываем токены по порядку.
@@ -15,4 +15,4 @@ void validate_html_structure(HtmlAnalysisResult& result) { // Проверяем
         } // Самозакрывающиеся теги, комментарии и текст не меняют стек.
     } // Завершаем обход токенов.
     for (const OpenElement& element : stack) result.diagnostics.push_back({ "Структурная ошибка", "Открывающий тег <" + element.name + "> не имеет закрывающего тега.", element.line, element.column }); // Сообщаем об элементах, оставшихся открытыми.
-} // Завершаем структурную проверку.
+}
