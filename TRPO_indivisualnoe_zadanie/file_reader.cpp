@@ -9,4 +9,4 @@ bool read_text_file(const std::string& path, std::string& content, std::string& 
     if (content.size() >= 3 && static_cast<unsigned char>(content[0]) == 0xEF && static_cast<unsigned char>(content[1]) == 0xBB && static_cast<unsigned char>(content[2]) == 0xBF) content.erase(0, 3); // Удаляем UTF-8 BOM.
     error_message.clear(); // Очищаем сообщение об ошибке.
     return true; // Подтверждаем успешное чтение.
-} // Завершаем чтение файла.
+}
