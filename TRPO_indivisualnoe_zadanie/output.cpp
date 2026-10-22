@@ -1,17 +1,41 @@
-#include "Header.h" // Подключаем общие объявления.
-void show_analysis_result(const HtmlAnalysisResult& result) { // Показываем статистику и найденные проблемы.
-    system("cls"); // Очищаем консоль перед результатом.
-    std::cout << "=======================================================================================================================\n";
-    std::cout << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n"; // Выводим заголовок.
-    std::cout << "Открывающие теги:       " << result.opening_tags << "\n"; // Показываем счётчик открывающих тегов.
-    std::cout << "Закрывающие теги:       " << result.closing_tags << "\n"; // Показываем счётчик закрывающих тегов.
-    std::cout << "Самозакрывающиеся теги: " << result.self_closing_tags << "\n"; // Показываем счётчик самозакрывающихся тегов.
-    std::cout << "Атрибуты:               " << result.attributes << "\n"; // Показываем счётчик атрибутов.
-    std::cout << "Комментарии:            " << result.comments << "\n"; // Показываем счётчик комментариев.
-    std::cout << "Текстовые фрагменты:    " << result.text_segments << "\n"; // Показываем счётчик текстовых фрагментов.
-    std::cout << "Диагностики:            " << result.diagnostics.size() << "\n"; // Показываем количество ошибок.
-    if (result.diagnostics.empty()) std::cout << "В пределах поддерживаемого подмножества HTML ошибки не обнаружены.\n"; // Показываем успешный результат.
-    else for (const HtmlDiagnostic& d : result.diagnostics) std::cout << "[" << d.category << "] строка " << d.line << ", столбец " << d.column << ": " << d.message << "\n"; // Выводим каждую диагностику с координатами.
-    std::cout << "\nНажмите любую клавишу для возврата...\n"; // Подсказываем действие пользователя.
-    input_data_reader(true, false, false); // Ожидаем нажатие клавиши.
+#include "Header.h"
+
+void show_analysis_result(const HtmlAnalysisResult& result) {
+    system("cls");
+
+    std::cout
+        << "=======================================================================================================================\n";
+    std::cout
+        << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n";
+
+    // Выводим статистику по обработанному документу.
+    std::cout << "Открывающие теги:       "
+              << result.opening_tags << "\n";
+    std::cout << "Закрывающие теги:       "
+              << result.closing_tags << "\n";
+    std::cout << "Самозакрывающиеся теги: "
+              << result.self_closing_tags << "\n";
+    std::cout << "Атрибуты:               "
+              << result.attributes << "\n";
+    std::cout << "Комментарии:            "
+              << result.comments << "\n";
+    std::cout << "Текстовые фрагменты:    "
+              << result.text_segments << "\n";
+    std::cout << "Диагностики:            "
+              << result.diagnostics.size() << "\n";
+
+    if (result.diagnostics.empty()) {
+        std::cout
+            << "В пределах поддерживаемого подмножества HTML ошибки не обнаружены.\n";
+    } else {
+        for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
+            std::cout << "[" << diagnostic.category << "] строка "
+                      << diagnostic.line << ", столбец "
+                      << diagnostic.column << ": "
+                      << diagnostic.message << "\n";
+        }
+    }
+
+    std::cout << "\nНажмите любую клавишу для возврата...\n";
+    input_data_reader(true, false, false);
 }
