@@ -27,7 +27,7 @@ bool contains_only(std::string const& str, char flag) {
 
     case 'з':
         // Исключаем знаки конца предложения.
-        return str.find_first_of(R"(.!?"'… )") == std::string::npos;
+        return str.find_first_of(R"(.!?"'…)") == std::string::npos;
 
     case 'с':
         // Исключаем специальные символы и знаки пунктуации.
