@@ -1,53 +1,60 @@
 #pragma once
+// Предотвращаем повторное объявление типов при подключении заголовка из разных модулей.
 
 #include <cstddef>
 #include <string>
 #include <vector>
 
+// Результат чтения клавиатурного ввода и признаки завершения ввода.
 struct Input_data {
-    std::string result;
-    bool Esc_controller = false;
-    bool Enter_controller = false;
+    std::string result; // Символы, накопленные до Enter или Esc.
+    bool Esc_controller = false; // true, если пользователь отменил ввод клавишей Esc.
+    bool Enter_controller = false; // true, если пользователь подтвердил ввод клавишей Enter.
 };
 
+// Категория распознанного фрагмента исходного HTML-документа.
 enum class HtmlTokenType {
-    OpenTag,
-    CloseTag,
-    SelfClosingTag,
-    Comment,
-    Declaration,
-    Text
+    OpenTag,        // Обычный открывающий тег, например <div>.
+    CloseTag,       // Закрывающий тег, например </div>.
+    SelfClosingTag, // Самозакрывающийся тег, например <item/>.
+    Comment,        // Комментарий HTML, ограниченный маркерами <!-- и -->.
+    Declaration,    // Декларация или специальная конструкция, начинающаяся с <! или <?.
+    Text            // Обычный текст вне распознанных тегов и деклараций.
 };
 
+// Имя и значение одного атрибута открывающего HTML-тега.
 struct HtmlAttribute {
-    std::string name;
-    std::string value;
+    std::string name;     // Имя тега для теговых токенов.  // Имя атрибута без окружающих пробелов.
+    std::string value; // Значение атрибута без ограничивающих кавычек, если они были.
 };
 
+// Токен хранит тип, исходный фрагмент и координаты для последующей проверки.
 struct HtmlToken {
-    HtmlTokenType type = HtmlTokenType::Text;
+    HtmlTokenType type = HtmlTokenType::Text; // Тип токена; по умолчанию обычный текст.
     std::string name;
-    std::string raw_text;
-    std::vector<HtmlAttribute> attributes;
-    std::size_t offset = 0;
-    std::size_t line = 1;
-    std::size_t column = 1;
+    std::string raw_text; // Исходное содержимое токена без потери значимых символов.
+    std::vector<HtmlAttribute> attributes; // Атрибуты, найденные внутри открывающего тега.
+    std::size_t offset = 0; // Смещение начала токена в исходной строке.
+    std::size_t line = 1;   // Строка, в которой обнаружена проблема.   // Номер строки исходного документа, начиная с единицы.
+    std::size_t column = 1; // Столбец, в котором обнаружена проблема. // Номер столбца исходного документа, начиная с единицы.
 };
 
+// Одна обнаруженная проблема с текстовым описанием и координатами источника.
 struct HtmlDiagnostic {
-    std::string category;
-    std::string message;
+    std::string category; // Категория проблемы, например лексическая или структурная.
+    std::string message;  // Пояснение, понятное пользователю.
     std::size_t line = 1;
     std::size_t column = 1;
 };
 
+// Совокупный результат разбора: токены, диагностики и счётчики элементов документа.
 struct HtmlAnalysisResult {
-    std::vector<HtmlToken> tokens;
-    std::vector<HtmlDiagnostic> diagnostics;
-    std::size_t opening_tags = 0;
-    std::size_t closing_tags = 0;
-    std::size_t self_closing_tags = 0;
-    std::size_t attributes = 0;
-    std::size_t comments = 0;
-    std::size_t text_segments = 0;
+    std::vector<HtmlToken> tokens; // Токены в порядке их появления в исходном тексте.
+    std::vector<HtmlDiagnostic> diagnostics; // Ошибки и предупреждения, найденные на этапах анализа.
+    std::size_t opening_tags = 0;       // Количество обычных открывающих тегов.
+    std::size_t closing_tags = 0;       // Количество закрывающих тегов.
+    std::size_t self_closing_tags = 0;  // Количество самозакрывающихся тегов.
+    std::size_t attributes = 0;         // Общее количество разобранных атрибутов.
+    std::size_t comments = 0;           // Количество комментариев HTML.
+    std::size_t text_segments = 0;      // Количество сегментов обычного текста.
 };
