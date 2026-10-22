@@ -1,6 +1,8 @@
 #include "Header.h"
 
+// Начальный экран объясняет назначение программы и расположение входных HTML-файлов.
 void show_start_window() {
+    // Очищаем предыдущий экран перед показом заставки.
     system("cls");
 
     std::cout
@@ -16,10 +18,13 @@ void show_start_window() {
         << "Проверка выполняется для поддерживаемого подмножества HTML.\n\n";
     std::cout << "Нажмите любую клавишу для продолжения...\n";
 
+    // Переходим к следующему экрану после любого нажатия клавиши.
     input_data_reader(true, false, false);
 }
 
+// Возвращает код действия; неверный ввод не покидает меню, а запускает повторный запрос.
 int show_main_menu() {
+    // Цикл повторяется до выбора допустимого пункта или нажатия Esc.
     while (true) {
         system("cls");
 
@@ -35,36 +40,46 @@ int show_main_menu() {
             << std::string(100, '=') << "\n";
         std::cout << "Ваш выбор > ";
 
+        // Считываем введённую строку и состояние клавиш Enter/Esc.
+        // Получаем номер пункта или сигнал отмены выбора.
         Input_data input = input_data_reader(true, true, false);
 
+        // Esc служит быстрым способом завершить программу из главного меню.
+        // При Esc не выбираем файл и возвращаем вызывающему коду пустое имя.
         if (input.Esc_controller) {
             return 3;
         }
 
+        // До Enter, при пустой строке или нечисловом вводе выбор не принимается.
         if (!input.Enter_controller ||
             input.result.empty() ||
             !contains_only(input.result, 'ц')) {
             continue;
         }
 
+        // Возвращаем код первого пункта вызывающему циклу программы.
         if (input.result == "1") {
             return 1;
         }
 
+        // Код второго пункта открывает информационный экран.
         if (input.result == "2") {
             return 2;
         }
 
+        // Код третьего пункта завершает работу программы.
         if (input.result == "3") {
             return 3;
         }
     }
 }
 
+// Возвращает имя выбранного HTML-файла; пустая строка обозначает отмену.
 std::string choose_source_file() {
     while (true) {
         system("cls");
 
+        // Собираем имена файлов отдельно, чтобы отсортировать список перед показом.
         std::vector<std::string> files;
 
         std::cout
@@ -72,6 +87,7 @@ std::string choose_source_file() {
         std::cout << "                                             ВЫБОР HTML-ФАЙЛА\n";
         std::cout << "Каталог: SourceTexts\n";
 
+        // Проверяем, существует ли каталог и не является ли указанный путь обычным файлом.
         if (!fs::exists("SourceTexts") ||
             !fs::is_directory("SourceTexts")) {
             std::cout
@@ -81,13 +97,16 @@ std::string choose_source_file() {
             return "";
         }
 
+        // Перебираем содержимое каталога, фильтруя неподходящие объекты и расширения.
         for (const auto& entry : fs::directory_iterator("SourceTexts")) {
+            // Подкаталоги и специальные объекты не должны попадать в список выбора.
             if (!entry.is_regular_file()) {
                 continue;
             }
 
             std::string extension = entry.path().extension().string();
 
+            // Нормализуем регистр расширения, чтобы принимать .html и .htm в любом регистре.
             std::transform(
                 extension.begin(),
                 extension.end(),
@@ -96,13 +115,16 @@ std::string choose_source_file() {
                     return static_cast<char>(std::tolower(ch));
                 });
 
+            // Добавляем только файлы с расширениями, которые поддерживает анализатор.
             if (extension == ".html" || extension == ".htm") {
                 files.push_back(entry.path().filename().string());
             }
         }
 
+        // Сортировка сохраняет стабильный и удобный для поиска порядок пунктов.
         std::sort(files.begin(), files.end());
 
+        // Без подходящих файлов выбор невозможен, поэтому возвращаемся в главное меню.
         if (files.empty()) {
             std::cout
                 << "В SourceTexts нет файлов .html или .htm.\n"
@@ -112,6 +134,7 @@ std::string choose_source_file() {
             return "";
         }
 
+        // Нумерация с единицы совпадает с диапазоном, ожидаемым от пользователя.
         for (std::size_t i = 0; i < files.size(); ++i) {
             std::cout << i + 1 << ". " << files[i] << "\n";
         }
@@ -130,18 +153,24 @@ std::string choose_source_file() {
             continue;
         }
 
+        // Преобразование строки может завершиться исключением при неверном формате или переполнении.
         try {
+            // Переводим введённый номер в целое число перед проверкой диапазона.
             const unsigned long choice = std::stoul(input.result);
 
+            // Проверяем границы до индексирования, учитывая нумерацию списка с единицы.
             if (choice >= 1 && choice <= files.size()) {
                 return files[choice - 1];
             }
         } catch (const std::exception&) {
+            // Некорректный номер не завершает программу: цикл повторно покажет приглашение.
+
             // При некорректном номере повторяем запрос.
         }
     }
 }
 
+// Показываем пользователю возможности программы и границы поддерживаемой проверки HTML.
 void show_about_screen() {
     system("cls");
 
@@ -159,6 +188,7 @@ void show_about_screen() {
     input_data_reader(true, false, false);
 }
 
+// Выводим сводку завершённой операции, если этот экран вызывается из сценария работы.
 void show_completion_screen(
     const std::string& filename,
     std::size_t errors) {
