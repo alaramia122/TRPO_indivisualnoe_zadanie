@@ -1,4 +1,5 @@
 #pragma once // Защищаем структуры от повторного включения.
+#include <cstddef> // Подключаем std::size_t для координат и смещений.
 #include <string> // Подключаем строки.
 #include <vector> // Подключаем динамические списки.
 struct Input_data { // Сохраняем контракт исходного utils.cpp.
