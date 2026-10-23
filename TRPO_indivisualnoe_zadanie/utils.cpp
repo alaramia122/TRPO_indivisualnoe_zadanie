@@ -123,7 +123,7 @@ Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
 
         
         default:                                // Все остальные коды обрабатываются как обычные вводимые символы.
-            data.result += ch;
+            data.result += static_cast<char>(ch);
 
             
             if (flag2) {                            // Отображаем обычный символ только при включённом выводе введённого текста.
