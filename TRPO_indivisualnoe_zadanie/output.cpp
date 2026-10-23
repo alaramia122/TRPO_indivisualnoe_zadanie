@@ -1,6 +1,5 @@
 #include "Header.h"
 
-namespace {
 
 // Возвращает значение атрибута с указанным именем.
 std::string get_attribute_value(
@@ -329,8 +328,6 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
                   << diagnostic.column << ": "
                   << diagnostic.message << "\n";
     }
-}
-
 }
 
 // Сохраняет статистику, извлечённые сведения и диагностики в UTF-8-файл.
