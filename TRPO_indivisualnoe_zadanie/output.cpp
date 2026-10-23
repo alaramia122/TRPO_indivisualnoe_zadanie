@@ -88,7 +88,7 @@ void append_utf8(std::string& output, unsigned long codepoint) {
         wide_size = 2;
     } else wide[0] = static_cast<wchar_t>(codepoint);
     char bytes[4];
-    const int size = WideCharToMultiByte(CP_UTF8, 0, wide, wide_size, bytes, sizeof(bytes), nullptr, nullptr);
+    const int size = WideCharToMultiByte(CP_UTF8, 0, wide, wide_size, bytes, static_cast<int>(sizeof(bytes)), nullptr, nullptr);
     if (size > 0) output.append(bytes, static_cast<std::size_t>(size));
 }
 
