@@ -1,7 +1,6 @@
 // Подключаем общие объявления проекта.
 #include "Header.h"
 
-namespace {
 
 // Индекс координат позволяет получать строку и столбец без повторного просмотра документа.
 class PositionIndex {
@@ -506,8 +505,6 @@ bool parse_tag(
 
     return true;
 }
-
-} // namespace
 
 // Последовательно преобразуем исходный HTML в токены и лексические диагностики.
 void parse_html(const std::string& source, HtmlAnalysisResult& result) {
