@@ -1,6 +1,4 @@
 #include "Header.h"
-#include <codecvt>
-#include <locale>
 
 namespace {
 
@@ -79,9 +77,19 @@ bool is_heading_tag(const std::string& name) {
         name[1] <= '6';
 }
 
+// Преобразуем кодовую точку Unicode в UTF-8 средствами Windows API.
 void append_utf8(std::string& output, unsigned long codepoint) {
-    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
-    output += converter.to_bytes(static_cast<char32_t>(codepoint));
+    wchar_t wide[2];
+    int wide_size = 1;
+    if (codepoint > 0xFFFF) {
+        codepoint -= 0x10000;
+        wide[0] = static_cast<wchar_t>(0xD800 + (codepoint >> 10));
+        wide[1] = static_cast<wchar_t>(0xDC00 + (codepoint & 0x3FF));
+        wide_size = 2;
+    } else wide[0] = static_cast<wchar_t>(codepoint);
+    char bytes[4];
+    const int size = WideCharToMultiByte(CP_UTF8, 0, wide, wide_size, bytes, sizeof(bytes), nullptr, nullptr);
+    if (size > 0) output.append(bytes, static_cast<std::size_t>(size));
 }
 
 // Декодирует распространённые HTML-сущности и числовые ссылки.
