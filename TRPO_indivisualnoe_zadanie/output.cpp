@@ -140,22 +140,26 @@ std::string decode_html_entities(const std::string& value) {
     return result;
 }
 
+// Храним извлечённые сведения отдельно от логики обхода HTML-токенов.
 struct DocumentInfo {
     std::string title;
     std::vector<std::string> metadata, headings, page_text, links, images, forms, canonical_urls;
 };
 
+// Сохраняем контекст открытых элементов между соседними токенами.
 struct ExtractionState {
     std::string text_tag, text_buffer, link_text, link_href, raw_tag;
     bool collecting_link = false;
     bool inside_raw_text = false;
 };
 
+// Извлекаем поддерживаемые meta-поля и свойства Open Graph.
 void extract_metadata(const HtmlToken& token, DocumentInfo& info) {
     const std::string name = get_attribute_value(token, "name");
     const std::string property = get_attribute_value(token, "property");
     const std::string content = decode_html_entities(get_attribute_value(token, "content"));
     const std::string charset = get_attribute_value(token, "charset");
+    // Кодировку сохраняем отдельно: для неё не требуется атрибут content.
     if (!charset.empty()) info.metadata.push_back("Кодировка: " + charset);
     if (!content.empty() &&
         (name == "description" || name == "keywords" || name == "author" ||
@@ -167,10 +171,13 @@ void extract_metadata(const HtmlToken& token, DocumentInfo& info) {
     }
 }
 
+// Формируем описание изображения по alt и адресу ресурса.
 void extract_image(const HtmlToken& token, DocumentInfo& info) {
     const std::string alt = normalize_text(decode_html_entities(get_attribute_value(token, "alt")));
     std::string src = get_attribute_value(token, "src");
+    // Используем srcset только как запасной источник, если src отсутствует.
     if (src.empty()) src = get_attribute_value(token, "srcset");
+    // Не включаем известный счётчик аналитики в список изображений страницы.
     if ((!alt.empty() || !src.empty()) && src.find("mc.yandex.ru/watch") == std::string::npos) {
         std::string description = alt.empty() ? "изображение" : alt;
         if (!src.empty()) description += " [" + src + "]";
@@ -178,6 +185,7 @@ void extract_image(const HtmlToken& token, DocumentInfo& info) {
     }
 }
 
+// Собираем значимые атрибуты элемента формы в одну строку.
 void extract_form_field(const HtmlToken& token, DocumentInfo& info) {
     std::string field = token.name;
     const std::string type = get_attribute_value(token, "type");
@@ -188,15 +196,19 @@ void extract_form_field(const HtmlToken& token, DocumentInfo& info) {
     if (!name.empty()) field += " name=" + name;
     if (!placeholder.empty()) field += " placeholder=" + placeholder;
     if (!value.empty()) field += " value=" + value;
+    // Элемент без дополнительных атрибутов не несёт полезных сведений для отчёта.
     if (field != token.name) info.forms.push_back(field);
 }
 
+// Обрабатываем данные открывающего или самозакрывающегося тега.
 void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionState& state) {
+    // Содержимое script/style не должно попадать в обычный текст страницы.
     if (token.name == "script" || token.name == "style") {
         state.inside_raw_text = token.type == HtmlTokenType::OpenTag;
         state.raw_tag = state.inside_raw_text ? token.name : "";
     }
     if (token.name == "meta") extract_metadata(token, info);
+    // Канонический адрес хранится отдельно от обычных ссылок.
     if (token.name == "link" && get_attribute_value(token, "rel") == "canonical") {
         const std::string href = get_attribute_value(token, "href");
         if (!href.empty()) info.canonical_urls.push_back(href);
@@ -204,11 +216,13 @@ void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionStat
     if (token.name == "img") extract_image(token, info);
     if (token.name == "input" || token.name == "textarea" ||
         token.name == "select" || token.name == "button") extract_form_field(token, info);
+    // Накапливаем текст ссылки до появления соответствующего закрывающего тега.
     if (token.name == "a" && token.type == HtmlTokenType::OpenTag) {
         state.link_text.clear();
         state.link_href = get_attribute_value(token, "href");
         state.collecting_link = true;
     }
+    // Для title и заголовков собираем текст из нескольких токенов.
     if (state.text_tag.empty() && token.type == HtmlTokenType::OpenTag &&
         (token.name == "title" || is_heading_tag(token.name))) {
         state.text_tag = token.name;
@@ -216,16 +230,19 @@ void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionStat
     }
 }
 
+// Добавляем текстовый токен в активные элементы и в текст страницы.
 void process_text_token(const HtmlToken& token, DocumentInfo& info, ExtractionState& state) {
     const std::string text = decode_html_entities(token.raw_text);
     if (!state.text_tag.empty()) state.text_buffer += text;
     if (state.collecting_link) state.link_text += text;
+    // Не извлекаем код скриптов и стилей как пользовательский текст.
     if (!state.inside_raw_text) {
         const std::string normalized = normalize_text(text);
         if (normalized.size() >= 2) info.page_text.push_back(normalized);
     }
 }
 
+// Завершаем накопление данных при закрытии соответствующего элемента.
 void process_close_tag(const HtmlToken& token, DocumentInfo& info, ExtractionState& state) {
     if (token.name == state.raw_tag) {
         state.inside_raw_text = false;
@@ -251,6 +268,7 @@ void process_close_tag(const HtmlToken& token, DocumentInfo& info, ExtractionSta
     }
 }
 
+// Формируем разделы в едином порядке для интерфейса и отчёта.
 std::vector<std::pair<std::string, std::vector<std::string>>>
 build_information_sections(const DocumentInfo& info) {
     std::vector<std::pair<std::string, std::vector<std::string>>> sections = {
@@ -260,12 +278,14 @@ build_information_sections(const DocumentInfo& info) {
         {"Изображения", info.images}, {"Элементы форм", info.forms},
         {"Канонический URL", info.canonical_urls}
     };
+    // Пустые разделы тоже должны содержать значение для навигации по результатам.
     for (auto& section : sections) {
         if (section.second.empty()) section.second.push_back("Список пуст.");
     }
     return sections;
 }
 
+// Последовательно обрабатываем токены и собираем сведения обо всём документе.
 std::vector<std::pair<std::string, std::vector<std::string>>>
 collect_document_information(const HtmlAnalysisResult& result) {
     DocumentInfo info;
@@ -284,13 +304,10 @@ collect_document_information(const HtmlAnalysisResult& result) {
 
 // Выводит статистику анализа HTML.
 void print_analysis_statistics(const HtmlAnalysisResult& result) {
-    // Выводим счётчики, накопленные парсером и валидатором, без повторного обхода токенов.
+    // Показываем заголовок и накопленные во время анализа счётчики.
     std::cout << std::string(100, '=') << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Открывающие теги:       " << result.opening_tags << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Закрывающие теги:       " << result.closing_tags << "\n";
     // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Самозакрывающиеся теги: " << result.self_closing_tags << "\n";
@@ -309,7 +326,7 @@ void show_document_information(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& sections,
     std::size_t section_index,
     std::size_t value_index) {
-    // Индексы раздела и значения предварительно ограничиваются навигационным циклом show_analysis_result().
+    // Индексы передаются из навигационного цикла show_analysis_result().
     const auto& section = sections[section_index];
     const auto& values = section.second;
 
@@ -333,7 +350,7 @@ void show_document_information(
 
 // Выводит сообщения валидатора в порядке их обнаружения.
 void print_diagnostics(const HtmlAnalysisResult& result) {
-    // Если нарушений не найдено, выводим итоговое сообщение; иначе показываем каждую диагностику с координатами.
+    // При отсутствии диагностик сообщаем об успешной проверке.
     if (result.diagnostics.empty()) {
         std::cout
             << "Проверка поддерживаемого подмножества HTML завершена успешно.\n";
@@ -341,7 +358,6 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
     }
 
     for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "[" << diagnostic.category << "] строка "
                   << diagnostic.line << ", столбец "
                   << diagnostic.column << ": "
@@ -351,21 +367,19 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
 
 }
 
-// Записывает статистику, извлечённые сведения и диагностики в UTF-8-файл.
+// Сохраняет статистику, извлечённые сведения и диагностики в UTF-8-файл.
 bool save_analysis_report(
     const HtmlAnalysisResult& result,
     const std::string& source_filename,
     std::string& saved_path,
     std::string& error_message) {
     try {
-        // Создаём каталог отчётов при первом сохранении, если его ещё нет.
         const fs::path output_directory("AnalysisResults");
-        // Создаём каталог для отчётов, если он отсутствует.
         fs::create_directories(output_directory);
 
         const std::string base_name =
             fs::u8path(source_filename).stem().u8string() + "_analysis";
-        // Формируем путь к файлу отчёта в каталоге результатов.
+        // Формируем путь к новому отчёту на основе имени исходного файла.
         fs::path report_path = output_directory / fs::u8path(base_name + ".txt");
 
         // Не перезаписываем ранее сохранённый отчёт с таким же именем.
@@ -375,25 +389,23 @@ bool save_analysis_report(
             ++suffix;
         }
 
-        // Бинарный режим исключает автоматическое преобразование переводов строк и сохраняет заданную кодировку.
+        // Открываем файл в бинарном режиме, чтобы записать UTF-8 без преобразования байтов.
         std::ofstream report(report_path, std::ios::binary);
         if (!report.is_open()) {
             error_message = "Не удалось открыть файл для записи.";
-            // Сообщаем вызывающему коду о неуспешном завершении операции.
-            return false;
+                return false;
         }
 
-        // Маркер UTF-8 помогает редакторам корректно определить кодировку отчёта.
+        // Добавляем BOM, чтобы текстовые редакторы могли определить кодировку UTF-8.
         report.write("\xEF\xBB\xBF", 3);
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
+        // Записываем заголовок отчёта и имя исходного файла.
         report << "РЕЗУЛЬТАТ АНАЛИЗА HTML" << "\n";
-        // Записываем разделитель для визуального оформления отчёта.
         report << std::string(60, '=') << "\n\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << "Исходный файл: "
                << source_filename << "\n\n";
 
         // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
+        // Сохраняем счётчики, полученные при разборе и проверке документа.
         report << "СТАТИСТИКА" << "\n";
         // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << "Открывающие теги: "
@@ -417,11 +429,11 @@ bool save_analysis_report(
         report << "Диагностики: "
                << result.diagnostics.size() << "\n";
 
-        // Повторно используем общий сборщик данных, чтобы содержимое отчёта совпадало с разделами интерфейса.
+        // Используем тот же набор разделов, который показывается в интерфейсе.
         const auto sections = collect_document_information(result);
+        // Записываем извлечённые данные в том же порядке, что и в интерфейсе.
         for (const auto& section : sections) {
             report << "\n" << section.first << "\n";
-            // Записываем разделитель для визуального оформления отчёта.
             report << std::string(60, '-') << "\n";
 
             for (const std::string& value : section.second) {
@@ -429,12 +441,12 @@ bool save_analysis_report(
             }
         }
 
-        // В конце отчёта сохраняем все сообщения проверки вместе с местом обнаружения.
+        // Добавляем диагностики с категорией и координатами обнаружения.
         report << "\n" << "ДИАГНОСТИКИ" << "\n";
         // Записываем разделитель для визуального оформления отчёта.
         report << std::string(60, '-') << "\n";
+        // При отсутствии замечаний сохраняем сообщение об успешной проверке.
         if (result.diagnostics.empty()) {
-            // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
             report << 
                 "Проверка поддерживаемого подмножества HTML завершена успешно."
                    << "\n";
@@ -447,7 +459,7 @@ bool save_analysis_report(
             }
         }
 
-        // Принудительно отправляем буфер в файл и проверяем состояние потока до подтверждения успеха.
+        // Проверяем состояние потока после сброса буфера на диск.
         report.flush();
         if (!report.good()) {
             error_message = "При записи отчёта произошла ошибка.";
@@ -456,7 +468,6 @@ bool save_analysis_report(
         }
 
         saved_path = report_path.u8string();
-        // Подтверждаем успешное завершение операции.
         return true;
     } catch (const std::exception&) {
         error_message = "Не удалось сохранить отчёт из-за ошибки файловой системы.";
@@ -469,13 +480,13 @@ bool save_analysis_report(
 void show_analysis_result(
     const HtmlAnalysisResult& result,
     const std::string& source_filename) {
-    // Подготавливаем разделы один раз и храним текущие позиции навигации между перерисовками экрана.
+    // Подготавливаем разделы один раз: они используются при каждой перерисовке экрана.
     const auto sections = collect_document_information(result);
     // Начинаем навигацию с первого раздела результата.
     std::size_t section_index = 0;
     // Начинаем просмотр с первого значения выбранного раздела.
     std::size_t value_index = 0;
-    // Флаг управляет завершением цикла просмотра результата.
+    // Цикл завершается после Enter или Esc.
     bool finished = false;
 
     while (!finished) {
@@ -487,7 +498,7 @@ void show_analysis_result(
         show_document_information(sections, section_index, value_index);
         // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "\n";
-        // Выводим сообщения структурной проверки документа.
+        // Показываем диагностики, найденные при проверке HTML.
         print_diagnostics(result);
 
         // Считываем нажатие клавиши без подтверждения клавишей Enter.
@@ -498,7 +509,7 @@ void show_analysis_result(
             // Считываем код стрелки после специального префикса клавиши.
             const int arrow = _getch();
 
-            // Коды стрелок обновляют индекс раздела или индекс значения в текущем разделе.
+            // Стрелки переключают раздел либо значение внутри текущего раздела.
             switch (arrow) {
             case 72:
                 section_index = section_index == 0
