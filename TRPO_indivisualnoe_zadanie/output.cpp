@@ -1,4 +1,6 @@
 #include "Header.h"
+#include <codecvt>
+#include <locale>
 
 namespace {
 
@@ -77,25 +79,9 @@ bool is_heading_tag(const std::string& name) {
         name[1] <= '6';
 }
 
-// Добавляет Unicode-кодовую точку в UTF-8.
 void append_utf8(std::string& output, unsigned long codepoint) {
-    // Кодируем одну кодовую точку в UTF-8 в зависимости от её диапазона.
-    if (codepoint <= 0x7F) {
-        output += static_cast<char>(codepoint);
-    } else if (codepoint <= 0x7FF) {
-        output += static_cast<char>(0xC0 | (codepoint >> 6));
-        output += static_cast<char>(0x80 | (codepoint & 0x3F));
-    } else if (codepoint <= 0xFFFF &&
-               !(codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
-        output += static_cast<char>(0xE0 | (codepoint >> 12));
-        output += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
-        output += static_cast<char>(0x80 | (codepoint & 0x3F));
-    } else if (codepoint <= 0x10FFFF) {
-        output += static_cast<char>(0xF0 | (codepoint >> 18));
-        output += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
-        output += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
-        output += static_cast<char>(0x80 | (codepoint & 0x3F));
-    }
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
+    output += converter.to_bytes(static_cast<char32_t>(codepoint));
 }
 
 // Декодирует распространённые HTML-сущности и числовые ссылки.
