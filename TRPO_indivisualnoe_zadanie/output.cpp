@@ -4,6 +4,8 @@ namespace {
 
 // Исправляет распространённый случай текста UTF-8, ошибочно прочитанного как Windows-1251.
 std::string repair_mojibake_utf8(const std::string& value) {
+    // Сначала ищем характерные сочетания символов, возникающие при неверной интерпретации UTF-8.
+    // Эвристика запускается только при наличии маркера, чтобы не преобразовывать обычный корректный текст.
     const bool has_mojibake_marker =
         value.find("Р ") != std::string::npos ||
         value.find("Рµ") != std::string::npos ||
@@ -37,6 +39,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
         return value;
     }
 
+    // Проверяем, можно ли декодировать исходные байты как корректную строку UTF-8.
     const int wide_size = MultiByteToWideChar(
         CP_UTF8,
         MB_ERR_INVALID_CHARS,
@@ -60,6 +63,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
         return value;
     }
 
+    // Получаем представление тех же символов в Windows-1251, чтобы восстановить исходные байты ошибочно прочитанного текста.
     const int legacy_size = WideCharToMultiByte(
         1251,
         0,
@@ -87,6 +91,7 @@ std::string repair_mojibake_utf8(const std::string& value) {
         return value;
     }
 
+    // Повторно декодируем полученные байты как UTF-8: на этом шаге обычно восстанавливается исходная кириллица.
     const int repaired_size = MultiByteToWideChar(
         CP_UTF8,
         MB_ERR_INVALID_CHARS,
@@ -144,11 +149,13 @@ std::string repair_mojibake_utf8(const std::string& value) {
 
 // Преобразует текст HTML из UTF-8 в кодировку консольного интерфейса Windows-1251.
 std::string utf8_to_console(const std::string& value) {
+    // Перед преобразованием исправляем известные случаи повреждённого текста и проверяем пустую строку.
     const std::string repaired = repair_mojibake_utf8(value);
     if (repaired.empty()) {
         return repaired;
     }
 
+    // Промежуточная широкая строка позволяет Windows выполнить преобразование между кодировками.
     const int wide_size = MultiByteToWideChar(
         CP_UTF8,
         MB_ERR_INVALID_CHARS,
@@ -206,6 +213,7 @@ std::string utf8_to_console(const std::string& value) {
 std::string get_attribute_value(
     const HtmlToken& token,
     const std::string& name) {
+    // Сравниваем имена атрибутов без учёта регистра, сохраняя исходное значение атрибута.
     for (const HtmlAttribute& attribute : token.attributes) {
         std::string attribute_name = attribute.name;
         std::transform(
@@ -226,6 +234,7 @@ std::string get_attribute_value(
 
 // Убирает пробелы по краям и сводит последовательности пробелов к одному.
 std::string normalize_text(const std::string& value) {
+    // Нормализация нужна для компактного вывода текста, извлечённого из разметки.
     // Исправляем повреждённую кодировку до обработки пробельных символов.
     const std::string repaired = repair_mojibake_utf8(value);
     std::string result;
@@ -265,6 +274,7 @@ std::string normalize_text(const std::string& value) {
 
 // Проверяет, относится ли имя тега к заголовкам h1–h6.
 bool is_heading_tag(const std::string& name) {
+    // Учитываем только стандартные имена заголовков с одной цифрой от 1 до 6.
     return name.size() == 2 &&
         name[0] == 'h' &&
         name[1] >= '1' &&
@@ -273,6 +283,7 @@ bool is_heading_tag(const std::string& name) {
 
 // Добавляет Unicode-кодовую точку в UTF-8.
 void append_utf8(std::string& output, unsigned long codepoint) {
+    // Кодируем одну кодовую точку в UTF-8 в зависимости от её диапазона.
     if (codepoint <= 0x7F) {
         output += static_cast<char>(codepoint);
     } else if (codepoint <= 0x7FF) {
@@ -293,6 +304,7 @@ void append_utf8(std::string& output, unsigned long codepoint) {
 
 // Декодирует распространённые HTML-сущности и числовые ссылки.
 std::string decode_html_entities(const std::string& value) {
+    // Обычные символы копируются напрямую, а конструкции с амперсандом проверяются как HTML-сущности.
     std::string result;
     for (std::size_t i = 0; i < value.size();) {
         if (value[i] != '&') {
@@ -304,6 +316,7 @@ std::string decode_html_entities(const std::string& value) {
             result += value[i++];
             continue;
         }
+        // Выделяем имя сущности между амперсандом и точкой с запятой.
         const std::string entity = value.substr(i + 1, semicolon - i - 1);
         if (entity == "amp") result += '&';
         else if (entity == "lt") result += '<';
@@ -316,6 +329,7 @@ std::string decode_html_entities(const std::string& value) {
         else if (entity == "hellip") result += "\xE2\x80\xA6";
         else if (entity == "copy") result += "\xC2\xA9";
         else if (entity == "reg") result += "\xC2\xAE";
+        // Числовые ссылки могут задаваться десятичным или шестнадцатеричным кодом Unicode.
         else if (!entity.empty() && entity[0] == '#') {
             try {
                 const bool hexadecimal = entity.size() > 2 &&
@@ -343,6 +357,8 @@ std::string decode_html_entities(const std::string& value) {
 // Извлекает метаданные, текстовые элементы, ссылки, изображения и поля форм.
 std::vector<std::pair<std::string, std::vector<std::string>>>
 collect_document_information(const HtmlAnalysisResult& result) {
+    // Для каждого раздела формируется отдельный список строк, пригодный и для интерфейса, и для отчёта.
+    // Эти переменные накапливают текст текущего заголовка, названия документа или ссылки до закрывающего тега.
     std::string active_text_tag;
     std::string text_buffer;
     std::string active_link;
@@ -351,6 +367,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
     bool inside_raw_text = false;
     std::string raw_text_tag;
 
+    // Результаты извлечения группируются по типам, чтобы отображать их в отдельных разделах.
     std::string document_title;
     std::vector<std::string> headings;
     std::vector<std::string> links;
@@ -360,6 +377,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
     std::vector<std::string> form_fields;
     std::vector<std::string> canonical_urls;
 
+    // Обрабатываем токены в исходном порядке, чтобы сохранять последовательность элементов страницы.
     for (const HtmlToken& token : result.tokens) {
         if (token.type == HtmlTokenType::OpenTag ||
             token.type == HtmlTokenType::SelfClosingTag) {
@@ -368,6 +386,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 raw_text_tag = inside_raw_text ? token.name : "";
             }
 
+            // Из meta извлекаются только выбранные поля, полезные для краткого описания страницы.
             if (token.name == "meta") {
                 const std::string name = get_attribute_value(token, "name");
                 const std::string property = get_attribute_value(token, "property");
@@ -387,6 +406,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 }
             }
 
+            // Канонический адрес определяется по атрибуту rel="canonical".
             if (token.name == "link") {
                 const std::string rel = get_attribute_value(token, "rel");
                 const std::string href = get_attribute_value(token, "href");
@@ -395,6 +415,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 }
             }
 
+            // Для изображения сохраняем альтернативное описание и адрес ресурса, если они доступны.
             if (token.name == "img") {
                 const std::string alt = normalize_text(decode_html_entities(
                     get_attribute_value(token, "alt")));
@@ -417,12 +438,14 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 }
             }
 
+            // При открытии ссылки запоминаем адрес и начинаем собирать её видимый текст.
             if (token.name == "a" && token.type == HtmlTokenType::OpenTag) {
                 active_link.clear();
                 link_href = get_attribute_value(token, "href");
                 collecting_link = true;
             }
 
+            // Элементы управления добавляются в отчёт, если у них есть хотя бы один полезный атрибут.
             if (token.name == "input" || token.name == "textarea" ||
                 token.name == "select" || token.name == "button") {
                 std::string field = token.name;
@@ -449,6 +472,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
             }
         }
 
+        // Текстовый токен может одновременно относиться к заголовку, подписи ссылки и общему тексту страницы.
         if (token.type == HtmlTokenType::Text) {
             const std::string decoded = decode_html_entities(token.raw_text);
             if (!active_text_tag.empty()) text_buffer += decoded;
@@ -459,6 +483,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
             }
         }
 
+        // Закрывающие теги завершают накопление текста для соответствующих элементов.
         if (token.type == HtmlTokenType::CloseTag) {
             if (token.name == raw_text_tag) {
                 inside_raw_text = false;
@@ -495,6 +520,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
         }
     }
 
+    // Фиксируем единый порядок разделов, используемый при навигации и формировании текстового отчёта.
     std::vector<std::pair<std::string, std::vector<std::string>>> sections;
     sections.push_back({
         "Название документа",
@@ -508,6 +534,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
     sections.push_back({"Элементы форм", form_fields});
     sections.push_back({"Канонический URL", canonical_urls});
 
+    // Пустые разделы также показываются пользователю, чтобы структура результата оставалась одинаковой.
     for (auto& section : sections) {
         if (section.second.empty()) section.second.push_back("Список пуст.");
     }
@@ -516,6 +543,7 @@ collect_document_information(const HtmlAnalysisResult& result) {
 
 // Выводит статистику анализа HTML.
 void print_analysis_statistics(const HtmlAnalysisResult& result) {
+    // Выводим счётчики, накопленные парсером и валидатором, без повторного обхода токенов.
     std::cout << std::string(100, '=') << "\n";
     std::cout << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n";
     std::cout << "Открывающие теги:       " << result.opening_tags << "\n";
@@ -532,6 +560,7 @@ void show_document_information(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& sections,
     std::size_t section_index,
     std::size_t value_index) {
+    // Индексы раздела и значения предварительно ограничиваются навигационным циклом show_analysis_result().
     const auto& section = sections[section_index];
     const auto& values = section.second;
 
@@ -548,6 +577,7 @@ void show_document_information(
 
 // Выводит сообщения валидатора в порядке их обнаружения.
 void print_diagnostics(const HtmlAnalysisResult& result) {
+    // Если нарушений не найдено, выводим итоговое сообщение; иначе показываем каждую диагностику с координатами.
     if (result.diagnostics.empty()) {
         std::cout
             << "Проверка поддерживаемого подмножества HTML завершена успешно.\n";
@@ -565,10 +595,12 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
 
 // Преобразует строку из кодировки консоли Windows-1251 в UTF-8 для текстового отчёта.
 std::string console_to_utf8(const std::string& value) {
+    // Отчёт хранится в UTF-8 независимо от кодировки, используемой консольным интерфейсом Windows.
     if (value.empty()) {
         return value;
     }
 
+    // Сначала преобразуем байты Windows-1251 в широкую строку Unicode.
     const int wide_size = MultiByteToWideChar(
         1251,
         0,
@@ -592,6 +624,7 @@ std::string console_to_utf8(const std::string& value) {
         return value;
     }
 
+    // Затем кодируем Unicode в UTF-8 для записи в файл.
     const int utf8_size = WideCharToMultiByte(
         CP_UTF8,
         0,
@@ -629,6 +662,7 @@ bool save_analysis_report(
     std::string& saved_path,
     std::string& error_message) {
     try {
+        // Создаём каталог отчётов при первом сохранении, если его ещё нет.
         const fs::path output_directory("AnalysisResults");
         fs::create_directories(output_directory);
 
@@ -644,6 +678,7 @@ bool save_analysis_report(
             ++suffix;
         }
 
+        // Бинарный режим исключает автоматическое преобразование переводов строк и сохраняет заданную кодировку.
         std::ofstream report(report_path, std::ios::binary);
         if (!report.is_open()) {
             error_message = "Не удалось открыть файл для записи.";
@@ -673,6 +708,7 @@ bool save_analysis_report(
         report << console_to_utf8("Диагностики: ")
                << result.diagnostics.size() << "\n";
 
+        // Повторно используем общий сборщик данных, чтобы содержимое отчёта совпадало с разделами интерфейса.
         const auto sections = collect_document_information(result);
         for (const auto& section : sections) {
             report << "\n" << console_to_utf8(section.first) << "\n";
@@ -683,6 +719,7 @@ bool save_analysis_report(
             }
         }
 
+        // В конце отчёта сохраняем все сообщения проверки вместе с местом обнаружения.
         report << "\n" << console_to_utf8("ДИАГНОСТИКИ") << "\n";
         report << std::string(60, '-') << "\n";
         if (result.diagnostics.empty()) {
@@ -698,6 +735,7 @@ bool save_analysis_report(
             }
         }
 
+        // Принудительно отправляем буфер в файл и проверяем состояние потока до подтверждения успеха.
         report.flush();
         if (!report.good()) {
             error_message = "При записи отчёта произошла ошибка.";
@@ -716,6 +754,7 @@ bool save_analysis_report(
 void show_save_prompt(
     const HtmlAnalysisResult& result,
     const std::string& source_filename) {
+    // Повторяем показ меню, пока пользователь не выберет сохранение или возврат.
     while (true) {
         system("cls");
         std::cout << std::string(100, '=') << "\n";
@@ -727,6 +766,7 @@ void show_save_prompt(
         std::cout << "Ваш выбор > ";
 
         const int key = _getch();
+        // Сохранение выполняется только после явного подтверждения пользователя.
         if (key == '1') {
             std::string saved_path;
             std::string error_message;
@@ -745,6 +785,7 @@ void show_save_prompt(
             return;
         }
 
+        // Клавиша Esc работает как альтернативный способ отказаться от сохранения.
         if (key == '2' || key == 27) {
             return;
         }
@@ -757,6 +798,7 @@ void show_save_prompt(
 void show_analysis_result(
     const HtmlAnalysisResult& result,
     const std::string& source_filename) {
+    // Подготавливаем разделы один раз и храним текущие позиции навигации между перерисовками экрана.
     const auto sections = collect_document_information(result);
     std::size_t section_index = 0;
     std::size_t value_index = 0;
@@ -771,9 +813,11 @@ void show_analysis_result(
 
         const int key = _getch();
 
+        // _getch возвращает специальный префикс перед кодом клавиши-стрелки в Windows-консоли.
         if (key == 0 || key == 224) {
             const int arrow = _getch();
 
+            // Коды стрелок обновляют индекс раздела или индекс значения в текущем разделе.
             switch (arrow) {
             case 72:
                 section_index = section_index == 0
@@ -799,6 +843,7 @@ void show_analysis_result(
             default:
                 break;
             }
+        // Enter и Esc завершают просмотр результата и открывают предложение сохранить отчёт.
         } else if (key == 13 || key == 27) {
             finished = true;
         }
