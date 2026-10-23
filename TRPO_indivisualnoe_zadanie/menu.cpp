@@ -50,7 +50,7 @@ int show_main_menu() {
 
         if (!input.Enter_controller ||                                                                      // Выбор обрабатывается после Enter и проверки числового формата строки.
             input.result.empty() ||                                                                         // При вводе с посторонними символами повторяем запрос.
-            !contains_only(input.result, 'ц')) {
+            !contains_only(input.result, 'd')) {
             continue;
         }
         
@@ -138,7 +138,7 @@ std::string choose_source_file() {
 
         if (!input.Enter_controller ||
             input.result.empty() ||
-            !contains_only(input.result, 'ц')) {
+            !contains_only(input.result, 'd')) {
             continue;
         }
 
