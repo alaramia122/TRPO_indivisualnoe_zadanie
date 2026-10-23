@@ -36,11 +36,9 @@ std::string repair_mojibake_utf8(const std::string& value) {
         value.find("В ") != std::string::npos;
 
     if (!has_mojibake_marker) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
-    // Проверяем, можно ли декодировать исходные байты как корректную строку UTF-8.
     const int wide_size = MultiByteToWideChar(
         CP_UTF8,
         MB_ERR_INVALID_CHARS,
@@ -50,7 +48,6 @@ std::string repair_mojibake_utf8(const std::string& value) {
         0);
 
     if (wide_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -62,7 +59,6 @@ std::string repair_mojibake_utf8(const std::string& value) {
             static_cast<int>(value.size()),
             wide_text.data(),
             wide_size) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -78,7 +74,6 @@ std::string repair_mojibake_utf8(const std::string& value) {
         nullptr);
 
     if (legacy_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -92,7 +87,6 @@ std::string repair_mojibake_utf8(const std::string& value) {
             legacy_size,
             nullptr,
             nullptr) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -106,11 +100,9 @@ std::string repair_mojibake_utf8(const std::string& value) {
         0);
 
     if (repaired_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
-    // Создаём промежуточное Unicode-представление восстановленного текста.
     std::wstring repaired_wide(
         static_cast<std::size_t>(repaired_size), L'\0');
     if (MultiByteToWideChar(
@@ -120,7 +112,6 @@ std::string repair_mojibake_utf8(const std::string& value) {
             legacy_size,
             repaired_wide.data(),
             repaired_size) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -135,11 +126,9 @@ std::string repair_mojibake_utf8(const std::string& value) {
         nullptr);
 
     if (repaired_utf8_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
-    // Выделяем буфер для восстановленной строки.
     std::string repaired(
         static_cast<std::size_t>(repaired_utf8_size), '\0');
     if (WideCharToMultiByte(
@@ -151,11 +140,9 @@ std::string repair_mojibake_utf8(const std::string& value) {
             repaired_utf8_size,
             nullptr,
             nullptr) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
-    // Возвращаем строку после попытки восстановления кодировки.
     return repaired;
 }
 
@@ -164,11 +151,9 @@ std::string utf8_to_console(const std::string& value) {
     // Перед преобразованием исправляем известные случаи повреждённого текста и проверяем пустую строку.
     const std::string repaired = repair_mojibake_utf8(value);
     if (repaired.empty()) {
-        // Возвращаем строку после попытки восстановления кодировки.
         return repaired;
     }
 
-    // Промежуточная широкая строка позволяет Windows выполнить преобразование между кодировками.
     const int wide_size = MultiByteToWideChar(
         CP_UTF8,
         MB_ERR_INVALID_CHARS,
@@ -178,7 +163,6 @@ std::string utf8_to_console(const std::string& value) {
         0);
 
     if (wide_size == 0) {
-        // Возвращаем строку после попытки восстановления кодировки.
         return repaired;
     }
 
@@ -190,7 +174,6 @@ std::string utf8_to_console(const std::string& value) {
             static_cast<int>(repaired.size()),
             wide_text.data(),
             wide_size) == 0) {
-        // Возвращаем строку после попытки восстановления кодировки.
         return repaired;
     }
 
@@ -205,7 +188,6 @@ std::string utf8_to_console(const std::string& value) {
         nullptr);
 
     if (output_size == 0) {
-        // Возвращаем строку после попытки восстановления кодировки.
         return repaired;
     }
 
@@ -219,11 +201,9 @@ std::string utf8_to_console(const std::string& value) {
             output_size,
             nullptr,
             nullptr) == 0) {
-        // Возвращаем строку после попытки восстановления кодировки.
         return repaired;
     }
 
-    // Возвращаем результат преобразования в целевую кодировку.
     return converted;
 }
 
@@ -257,9 +237,7 @@ std::string normalize_text(const std::string& value) {
     // Нормализация нужна для компактного вывода текста, извлечённого из разметки.
     // Исправляем повреждённую кодировку до обработки пробельных символов.
     const std::string repaired = repair_mojibake_utf8(value);
-    // Создаём строку, в которой будет накапливаться результат обработки.
     std::string result;
-    // Отмечаем наличие пробела, который потребуется вставить между словами.
     bool pending_space = false;
 
     for (std::size_t i = 0; i < repaired.size();) {
@@ -291,7 +269,6 @@ std::string normalize_text(const std::string& value) {
         result += static_cast<char>(ch);
     }
 
-    // Возвращаем сформированный результат обработки.
     return result;
 }
 
@@ -306,7 +283,6 @@ bool is_heading_tag(const std::string& name) {
 
 // Добавляет Unicode-кодовую точку в UTF-8.
 void append_utf8(std::string& output, unsigned long codepoint) {
-    // Кодируем одну кодовую точку в UTF-8 в зависимости от её диапазона.
     if (codepoint <= 0x7F) {
         output += static_cast<char>(codepoint);
     } else if (codepoint <= 0x7FF) {
@@ -327,7 +303,6 @@ void append_utf8(std::string& output, unsigned long codepoint) {
 
 // Декодирует распространённые HTML-сущности и числовые ссылки.
 std::string decode_html_entities(const std::string& value) {
-    // Обычные символы копируются напрямую, а конструкции с амперсандом проверяются как HTML-сущности.
     std::string result;
     for (std::size_t i = 0; i < value.size();) {
         if (value[i] != '&') {
@@ -339,7 +314,6 @@ std::string decode_html_entities(const std::string& value) {
             result += value[i++];
             continue;
         }
-        // Выделяем имя сущности между амперсандом и точкой с запятой.
         const std::string entity = value.substr(i + 1, semicolon - i - 1);
         if (entity == "amp") result += '&';
         else if (entity == "lt") result += '<';
@@ -355,12 +329,9 @@ std::string decode_html_entities(const std::string& value) {
         // Числовые ссылки могут задаваться десятичным или шестнадцатеричным кодом Unicode.
         else if (!entity.empty() && entity[0] == '#') {
             try {
-                // Определяем основание системы счисления числовой ссылки.
                 const bool hexadecimal = entity.size() > 2 &&
                     (entity[1] == 'x' || entity[1] == 'X');
-                // Выделяем цифры числовой ссылки без её префикса.
                 const std::string digits = entity.substr(hexadecimal ? 2 : 1);
-                // Получаем числовой код символа из HTML-сущности.
                 const unsigned long codepoint = std::stoul(
                     digits, nullptr, hexadecimal ? 16 : 10);
                 if (codepoint == 0 || codepoint > 0x10FFFF ||
@@ -377,7 +348,6 @@ std::string decode_html_entities(const std::string& value) {
         }
         i = semicolon + 1;
     }
-    // Возвращаем сформированный результат обработки.
     return result;
 }
 
@@ -617,21 +587,13 @@ collect_document_information(const HtmlAnalysisResult& result) {
 void print_analysis_statistics(const HtmlAnalysisResult& result) {
     // Выводим счётчики, накопленные парсером и валидатором, без повторного обхода токенов.
     std::cout << std::string(100, '=') << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "                                          РЕЗУЛЬТАТ АНАЛИЗА HTML\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Открывающие теги:       " << result.opening_tags << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Закрывающие теги:       " << result.closing_tags << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Самозакрывающиеся теги: " << result.self_closing_tags << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Атрибуты:               " << result.attributes << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Комментарии:            " << result.comments << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Текстовые фрагменты:    " << result.text_segments << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Диагностики:            " << result.diagnostics.size() << "\n";
 }
 
@@ -644,21 +606,14 @@ void show_document_information(
     const auto& section = sections[section_index];
     const auto& values = section.second;
 
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "\nИНФОРМАЦИЯ ИЗ ДОКУМЕНТА\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Раздел " << section_index + 1 << " из "
               << sections.size() << ": " << section.first << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Значение " << value_index + 1 << " из "
               << values.size() << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "\n  " << values[value_index] << "\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "\nСтрелки вверх/вниз — выбрать раздел.\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Стрелки влево/вправо — переключить значение.\n";
-    // Выводим очередную строку интерфейса или результат анализа.
     std::cout << "Enter или Esc — продолжить.\n";
 }
 
@@ -672,7 +627,6 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
     }
 
     for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "[" << diagnostic.category << "] строка "
                   << diagnostic.line << ", столбец "
                   << diagnostic.column << ": "
@@ -685,7 +639,6 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
 std::string console_to_utf8(const std::string& value) {
     // Отчёт хранится в UTF-8 независимо от кодировки, используемой консольным интерфейсом Windows.
     if (value.empty()) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -699,7 +652,6 @@ std::string console_to_utf8(const std::string& value) {
         0);
 
     if (wide_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -711,7 +663,6 @@ std::string console_to_utf8(const std::string& value) {
             static_cast<int>(value.size()),
             wide_text.data(),
             wide_size) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -727,7 +678,6 @@ std::string console_to_utf8(const std::string& value) {
         nullptr);
 
     if (utf8_size == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
@@ -741,11 +691,9 @@ std::string console_to_utf8(const std::string& value) {
             utf8_size,
             nullptr,
             nullptr) == 0) {
-        // Возвращаем исходное значение, если безопасное преобразование выполнить не удалось.
         return value;
     }
 
-    // Возвращаем результат преобразования в целевую кодировку.
     return converted;
 }
 
@@ -778,49 +726,35 @@ bool save_analysis_report(
         std::ofstream report(report_path, std::ios::binary);
         if (!report.is_open()) {
             error_message = "Не удалось открыть файл для записи.";
-            // Сообщаем вызывающему коду о неуспешном завершении операции.
             return false;
         }
 
         // Маркер UTF-8 помогает редакторам корректно определить кодировку отчёта.
         report.write("\xEF\xBB\xBF", 3);
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("РЕЗУЛЬТАТ АНАЛИЗА HTML") << "\n";
-        // Записываем разделитель для визуального оформления отчёта.
         report << std::string(60, '=') << "\n\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Исходный файл: ")
                << console_to_utf8(source_filename) << "\n\n";
 
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("СТАТИСТИКА") << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Открывающие теги: ")
                << result.opening_tags << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Закрывающие теги: ")
                << result.closing_tags << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Самозакрывающиеся теги: ")
                << result.self_closing_tags << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Атрибуты: ")
                << result.attributes << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Комментарии: ")
                << result.comments << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Текстовые фрагменты: ")
                << result.text_segments << "\n";
-        // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
         report << console_to_utf8("Диагностики: ")
                << result.diagnostics.size() << "\n";
 
-        // Повторно используем общий сборщик данных, чтобы содержимое отчёта совпадало с разделами интерфейса.
         const auto sections = collect_document_information(result);
         for (const auto& section : sections) {
             report << "\n" << console_to_utf8(section.first) << "\n";
-            // Записываем разделитель для визуального оформления отчёта.
             report << std::string(60, '-') << "\n";
 
             for (const std::string& value : section.second) {
@@ -828,12 +762,9 @@ bool save_analysis_report(
             }
         }
 
-        // В конце отчёта сохраняем все сообщения проверки вместе с местом обнаружения.
         report << "\n" << console_to_utf8("ДИАГНОСТИКИ") << "\n";
-        // Записываем разделитель для визуального оформления отчёта.
         report << std::string(60, '-') << "\n";
         if (result.diagnostics.empty()) {
-            // Записываем очередное поле отчёта, предварительно переводя текст в UTF-8.
             report << console_to_utf8(
                 "Проверка поддерживаемого подмножества HTML завершена успешно.")
                    << "\n";
@@ -846,20 +777,16 @@ bool save_analysis_report(
             }
         }
 
-        // Принудительно отправляем буфер в файл и проверяем состояние потока до подтверждения успеха.
         report.flush();
         if (!report.good()) {
             error_message = "При записи отчёта произошла ошибка.";
-            // Сообщаем вызывающему коду о неуспешном завершении операции.
             return false;
         }
 
         saved_path = report_path.string();
-        // Подтверждаем успешное завершение операции.
         return true;
     } catch (const std::exception&) {
         error_message = "Не удалось сохранить отчёт из-за ошибки файловой системы.";
-        // Сообщаем вызывающему коду о неуспешном завершении операции.
         return false;
     }
 }
@@ -870,51 +797,36 @@ void show_save_prompt(
     const std::string& source_filename) {
     // Повторяем показ меню, пока пользователь не выберет сохранение или возврат.
     while (true) {
-        // Очищаем консоль перед отображением нового экрана.
         system("cls");
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << std::string(100, '=') << "\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "                                      СОХРАНЕНИЕ РЕЗУЛЬТАТА\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << std::string(100, '=') << "\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "Сохранить результат анализа в текстовый файл?\n\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "1. Да, сохранить\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "2. Нет, вернуться в главное меню\n";
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "Ваш выбор > ";
 
-        // Считываем нажатие клавиши без подтверждения клавишей Enter.
         const int key = _getch();
-        // Сохранение выполняется только после явного подтверждения пользователя.
         if (key == '1') {
             // Подготавливаем переменную для пути к сохранённому отчёту.
             std::string saved_path;
             // Подготавливаем текст для сообщения об ошибке сохранения.
             std::string error_message;
 
-            // Очищаем консоль перед отображением нового экрана.
             system("cls");
             if (save_analysis_report(
                     result, source_filename, saved_path, error_message)) {
-                // Выводим очередную строку интерфейса или результат анализа.
                 std::cout << "Результат сохранён.\nФайл: "
                           << saved_path << "\n";
             } else {
-                // Выводим очередную строку интерфейса или результат анализа.
                 std::cout << error_message << "\n";
             }
 
-            // Выводим очередную строку интерфейса или результат анализа.
             std::cout << "\nНажмите любую клавишу для возврата в меню...\n";
             input_data_reader(true, false, false);
             return;
         }
 
-        // Клавиша Esc работает как альтернативный способ отказаться от сохранения.
         if (key == '2' || key == 27) {
             return;
         }
@@ -927,28 +839,18 @@ void show_save_prompt(
 void show_analysis_result(
     const HtmlAnalysisResult& result,
     const std::string& source_filename) {
-    // Подготавливаем разделы один раз и храним текущие позиции навигации между перерисовками экрана.
     const auto sections = collect_document_information(result);
-    // Начинаем навигацию с первого раздела результата.
     std::size_t section_index = 0;
-    // Начинаем просмотр с первого значения выбранного раздела.
     std::size_t value_index = 0;
-    // Флаг управляет завершением цикла просмотра результата.
     bool finished = false;
 
     while (!finished) {
-        // Очищаем консоль перед отображением нового экрана.
         system("cls");
-        // Выводим сводные счётчики анализа перед подробными данными.
         print_analysis_statistics(result);
-        // Показываем выбранный раздел и его текущее значение.
         show_document_information(sections, section_index, value_index);
-        // Выводим очередную строку интерфейса или результат анализа.
         std::cout << "\n";
-        // Выводим сообщения структурной проверки документа.
         print_diagnostics(result);
 
-        // Считываем нажатие клавиши без подтверждения клавишей Enter.
         const int key = _getch();
 
         // _getch возвращает специальный префикс перед кодом клавиши-стрелки в Windows-консоли.
@@ -956,7 +858,6 @@ void show_analysis_result(
             // Считываем код стрелки после специального префикса клавиши.
             const int arrow = _getch();
 
-            // Коды стрелок обновляют индекс раздела или индекс значения в текущем разделе.
             switch (arrow) {
             case 72:
                 section_index = section_index == 0
@@ -982,12 +883,10 @@ void show_analysis_result(
             default:
                 break;
             }
-        // Enter и Esc завершают просмотр результата и открывают предложение сохранить отчёт.
         } else if (key == 13 || key == 27) {
             finished = true;
         }
     }
 
-    // Предлагаем пользователю сохранить сформированный результат.
     show_save_prompt(result, source_filename);
 }
