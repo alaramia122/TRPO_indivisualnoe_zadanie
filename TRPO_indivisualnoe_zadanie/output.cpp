@@ -361,6 +361,7 @@ bool save_analysis_report(
     std::string& saved_path,
     std::string& error_message) {
     try {
+        // Создаём каталог для отчётов, если он ещё отсутствует.
         const fs::path output_directory("AnalysisResults");
         fs::create_directories(output_directory);
 
@@ -380,7 +381,7 @@ bool save_analysis_report(
         std::ofstream report(report_path, std::ios::binary);
         if (!report.is_open()) {
             error_message = "Не удалось открыть файл для записи.";
-                return false;
+            return false;
         }
 
         // Добавляем BOM, чтобы текстовые редакторы могли определить кодировку UTF-8.
@@ -391,7 +392,6 @@ bool save_analysis_report(
         // Указываем путь к проанализированному файлу.
         report << "Исходный файл: "
                << source_filename << "\n\n";
-        // Сохраняем счётчики, полученные при разборе и проверке документа.
         // Сохраняем счётчики, полученные при разборе и проверке документа.
         report << "СТАТИСТИКА" << "\n";
         report << "Открывающие теги: "
