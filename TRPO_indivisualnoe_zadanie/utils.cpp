@@ -4,29 +4,29 @@
 bool contains_only(std::string const& str, char flag) {
     
     switch (flag) {                                                     // Символьный код выбирает режим проверки.
-    case 'б':                                                               // Проверяем кириллицу и латиницу.
+    case 'b':                                                               // Проверяем кириллицу и латиницу.
         return str.find_first_not_of(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ") == std::string::npos;
 
-    case 'р':                                                               // Проверяем только кириллицу.
+    case 'r':                                                               // Проверяем только кириллицу.
         return str.find_first_not_of(
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ") == std::string::npos;
 
-    case 'а':                                                               // Проверяем только латиницу.
+    case 'a':                                                               // Проверяем только латиницу.
         return str.find_first_not_of(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") ==
             std::string::npos;
 
-    case 'ц':                                                               // Проверяем, что строка содержит только цифры.
+    case 'd':                                                               // Проверяем, что строка содержит только цифры.
         return str.find_first_not_of("0123456789") == std::string::npos;
 
-    case 'з':                                                               // Исключаем знаки конца предложения.
+    case 'z':                                                               // Исключаем знаки конца предложения.
         return str.find_first_of(R"(.!?"'…)") == std::string::npos;
 
-    case 'с':                                                               // Исключаем специальные символы и знаки пунктуации.
+    case 's':                                                               // Исключаем специальные символы и знаки пунктуации.
         return str.find_first_of(R"(,,></|=+&^%$#@*(){}[]№;:'»«\)") ==
             std::string::npos;
 
@@ -75,7 +75,7 @@ std::vector<char> Cutter_of_string_char(
 // Считывает клавиши напрямую и возвращает строку вместе с состоянием Enter/Esc.
 Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
     Input_data data;
-    char ch;
+    int ch;
 
     
     do {                                    // Цикл завершается только после того, как обработчик Enter или Esc сбросит флаг продолжения.
@@ -106,28 +106,28 @@ Input_data input_data_reader(bool flag, bool flag2, bool flag3) {
             break;
 
         
-        case -32:                               // Префикс -32 обозначает расширенную клавишу в используемом Windows-вводе.
+        case 224:                               // Код 224 обозначает префикс расширенной клавиши в Windows-вводе.
             
             if (flag3) {                            // Если включён специальный режим, считываем следующий код расширенной клавиши.
                 ch = _getch();
             }
             else {
-                data.result += ch;
+                data.result += static_cast<char>(ch);
 
                 
                 if (flag2) {                        // Флаг отображения управляет выводом символа, но не его сохранением в строке.
-                    std::cout << ch;
+                    std::cout << static_cast<char>(ch);
                 }
             }
             break;
 
         
         default:                                // Все остальные коды обрабатываются как обычные вводимые символы.
-            data.result += ch;
+            data.result += static_cast<char>(ch);
 
             
             if (flag2) {                            // Отображаем обычный символ только при включённом выводе введённого текста.
-                std::cout << ch;
+                std::cout << static_cast<char>(ch);
             }
             break;
         }
