@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <string>
+#include "Struct.h"
 
 // Показывает начальный экран и ожидает продолжения пользователя.
 void show_start_window();
@@ -23,3 +24,6 @@ void show_completion_screen(
     const std::string& filename,                // Имя обработанного файла для отображения пользователю.
     
     std::size_t errors);                        // Количество ошибок, найденных при обработке.
+
+// Предлагает сохранить результат анализа после просмотра.
+void show_save_prompt(const HtmlAnalysisResult& result, const std::string& source_filename);
