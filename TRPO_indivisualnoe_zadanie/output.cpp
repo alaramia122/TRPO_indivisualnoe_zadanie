@@ -384,8 +384,6 @@ collect_document_information(const HtmlAnalysisResult& result) {
     std::vector<std::string> page_text;
     // Храним описания элементов управления формы.
     std::vector<std::string> form_fields;
-    // Храним найденные канонические URL.
-    std::vector<std::string> canonical_urls;
 
     // Обрабатываем токены в исходном порядке, чтобы сохранять последовательность элементов страницы.
     for (const HtmlToken& token : result.tokens) {
@@ -400,8 +398,6 @@ collect_document_information(const HtmlAnalysisResult& result) {
             if (token.name == "meta") {
                 // Получаем имя атрибута или метаданных для дальнейшей проверки.
                 const std::string name = get_attribute_value(token, "name");
-                // Получаем свойство Open Graph для фильтрации метаданных.
-                const std::string property = get_attribute_value(token, "property");
                 // Считываем содержимое метаданных из атрибутов HTML.
                 const std::string content = decode_html_entities(
                     get_attribute_value(token, "content"));
@@ -410,27 +406,9 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 if (!charset.empty()) metadata.push_back("Кодировка: " + charset);
                 if (!name.empty() && !content.empty() &&
                     (name == "description" || name == "keywords" ||
-                     name == "author" || name == "application-name")) {
+                     name == "author")) {
                     // Добавляем найденное значение метаданных в соответствующий список.
                     metadata.push_back(name + ": " + utf8_to_console(content));
-                }
-                if (!property.empty() && !content.empty() &&
-                    (property == "og:title" || property == "og:description" ||
-                     property == "og:type" || property == "og:url")) {
-                    // Добавляем найденное значение метаданных в соответствующий список.
-                    metadata.push_back(property + ": " + utf8_to_console(content));
-                }
-            }
-
-            // Канонический адрес определяется по атрибуту rel="canonical".
-            if (token.name == "link") {
-                // Получаем назначение элемента link.
-                const std::string rel = get_attribute_value(token, "rel");
-                // Считываем адрес ссылки из атрибута href.
-                const std::string href = get_attribute_value(token, "href");
-                if (rel == "canonical" && !href.empty()) {
-                    // Добавляем канонический адрес страницы в итоговый список.
-                    canonical_urls.push_back(utf8_to_console(href));
                 }
             }
 
@@ -439,15 +417,8 @@ collect_document_information(const HtmlAnalysisResult& result) {
                 // Получаем нормализованное альтернативное описание изображения.
                 const std::string alt = normalize_text(decode_html_entities(
                     get_attribute_value(token, "alt")));
-                std::string src = get_attribute_value(token, "src");
-                if (src.empty()) {
-                    src = get_attribute_value(token, "srcset");
-                }
-
-                // Скрытый счётчик аналитики не относится к содержимому страницы.
-                const bool tracking_pixel =
-                    src.find("mc.yandex.ru/watch") != std::string::npos;
-                if ((!alt.empty() || !src.empty()) && !tracking_pixel) {
+                const std::string src = get_attribute_value(token, "src");
+                if (!alt.empty() || !src.empty()) {
                     // Формируем человекочитаемое описание изображения.
                     std::string image_info = alt.empty()
                         ? "изображение"
@@ -572,8 +543,6 @@ collect_document_information(const HtmlAnalysisResult& result) {
     sections.push_back({"Изображения", images});
     // Добавляем раздел в фиксированную последовательность отображения результатов.
     sections.push_back({"Элементы форм", form_fields});
-    // Добавляем раздел в фиксированную последовательность отображения результатов.
-    sections.push_back({"Канонический URL", canonical_urls});
 
     // Пустые разделы также показываются пользователю, чтобы структура результата оставалась одинаковой.
     for (auto& section : sections) {
