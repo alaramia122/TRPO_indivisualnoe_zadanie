@@ -3,11 +3,9 @@
 
 int main() {                                                // Точка входа программы: настройка консоли и организация основного пользовательского цикла.
     
-    SetConsoleCP(1251);                                         // Настраиваем консоль на русскую кодовую страницу Windows-1251.
-    SetConsoleOutputCP(1251);
-    if (setlocale(LC_ALL, "ru") == nullptr) {                   // Используем альтернативное имя локали для среды Windows.
-        setlocale(LC_ALL, "Russian_Russia.1251");
-    }
+    SetConsoleCP(CP_UTF8);                                         // Настраиваем консоль на UTF-8.
+    SetConsoleOutputCP(CP_UTF8);
+    
     system("color F0");                                         // Настраиваем контрастную цветовую схему консольного интерфейса.
 
     show_start_window();                                        // До меню показываем пользователю назначение программы и формат входных данных.
@@ -24,7 +22,7 @@ int main() {                                                // Точка вхо
             }
 
             const std::string path =                                        // Входные примеры ожидаются в каталоге SourceTexts относительно рабочей папки.
-                (fs::path("SourceTexts") / filename).string();
+                (fs::path("SourceTexts") / fs::u8path(filename)).u8string();
 
             std::string source;
             std::string error_message;

@@ -5,7 +5,7 @@ bool read_text_file(
     std::string& content,
     std::string& error_message) {
 
-    std::ifstream file(path, std::ios::binary);                 // Двоичный режим сохраняет исходные байты и исходные переводы строк.
+    std::ifstream file(fs::u8path(path), std::ios::binary);                 // Двоичный режим сохраняет исходные байты и исходные переводы строк.
 
     if (!file.is_open()) {                                      // При ошибке открытия возвращаем диагностическое сообщение вызывающему коду.
         error_message = "Ошибка открытия файла: " + path;
