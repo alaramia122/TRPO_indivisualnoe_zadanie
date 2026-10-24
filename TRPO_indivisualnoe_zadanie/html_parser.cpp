@@ -72,11 +72,11 @@ bool name_char(char value) {
 
 // Добавляем диагностику с координатами исходного документа.
 void add_diagnostic(
-    HtmlAnalysisResult& result,
-    const std::string& category,
-    const std::string& message,
-    const PositionIndex& positions,
-    std::size_t offset) {
+	HtmlAnalysisResult& result,     // Результат анализа, в который добавляется диагностика.
+	const std::string& category,    // Категория проблемы, например "Лексическая ошибка" или "Структурная ошибка".
+	const std::string& message,     // Сообщение, понятное пользователю, описывающее проблему.
+	const PositionIndex& positions, // Объект, позволяющий определить номер строки по смещению в тексте файла.
+	std::size_t offset) {           // Смещение в тексте файла, по которому нужно определить номер строки для диагностики.
 
     const std::size_t line = positions.at(offset);
     result.diagnostics.push_back({ category, message, line });
