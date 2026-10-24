@@ -82,60 +82,63 @@ void add_diagnostic(
     result.diagnostics.push_back({ category, message, line });
 }
 
-// Определяем самозакрытие, не принимая слеш внутри значения атрибута за маркер.
-bool is_self_closing(const std::string& inside, std::size_t cursor) {
-    if (inside.empty() || inside.back() != '/') {
+// Определяем самозакрытие
+bool is_self_closing(const std::string& tag_string, std::size_t cursor) {       //tag_string — строка с содержимым HTML-тега без внешних угловых скобок. cursor — индекс символа, с которого нужно начинать анализ
+	
+    if (tag_string.empty() || tag_string.back() != '/') {                               // Если строка пустая или не оканчивается слешем, то самозакрытия нет.
         return false;
     }
 
-    while (cursor < inside.size()) {
-        while (cursor < inside.size() &&
-               std::isspace(static_cast<unsigned char>(inside[cursor]))) {
+	while (cursor < tag_string.size()) {                                            // Проверяем, что слеш не находится внутри значения атрибута, ограниченного кавычками.
+		while (cursor < tag_string.size() &&                                            // Пропускаем пробелы
+               std::isspace(static_cast<unsigned char>(tag_string[cursor]))) {
             ++cursor;
         }
 
-        if (cursor == inside.size() - 1) {
-            return inside[cursor] == '/';
+		if (cursor == tag_string.size() - 1) {                                          // Если курсор дошёл до предпоследнего символа, то слеш находится в конце строки, и тег самозакрывающийся.
+            return tag_string[cursor] == '/';
         }
 
-        while (cursor < inside.size() && name_char(inside[cursor])) {
+		while (cursor < tag_string.size() && name_char(tag_string[cursor])) {           // Пропускаем имя атрибута
             ++cursor;
         }
 
-        while (cursor < inside.size() &&
-               std::isspace(static_cast<unsigned char>(inside[cursor]))) {
+		while (cursor < tag_string.size() &&                                            // Пропускаем пробелы после имени
+               std::isspace(static_cast<unsigned char>(tag_string[cursor]))) {
             ++cursor;
         }
 
-        if (cursor >= inside.size() || inside[cursor] != '=') {
+        if (cursor >= tag_string.size() || tag_string[cursor] != '=') {                 // Проверяем наличие значения атрибута
             continue;
         }
 
-        ++cursor;
+		++cursor;                                                                       // Пропускаем символ '='
 
-        while (cursor < inside.size() &&
-               std::isspace(static_cast<unsigned char>(inside[cursor]))) {
+		while (cursor < tag_string.size() &&                                            // Пропускаем пробелы после '='
+               std::isspace(static_cast<unsigned char>(tag_string[cursor]))) {
             ++cursor;
         }
 
-        if (cursor < inside.size() &&
-            (inside[cursor] == '"' || inside[cursor] == '\'')) {
-            const char quote = inside[cursor++];
-            while (cursor < inside.size() && inside[cursor] != quote) {
+		if (cursor < tag_string.size() &&                                               // Если значение атрибута заключено в кавычки, пропускаем его целиком, чтобы не спутать слеш внутри значения с маркером самозакрытия.
+            (tag_string[cursor] == '"' || tag_string[cursor] == '\'')) {
+
+			const char quote = tag_string[cursor++];                                        // записываем символ открывающей кавычки и пропускаем его
+			while (cursor < tag_string.size() && tag_string[cursor] != quote) {             // Пропускаем символы внутри кавычек
                 ++cursor;
             }
 
-            if (cursor < inside.size()) {
+			if (cursor < tag_string.size()) {                                               // Пропускаем закрывающую кавычку
                 ++cursor;
             }
-        } else {
-            const std::size_t value_start = cursor;
-            while (cursor < inside.size() &&
-                   !std::isspace(static_cast<unsigned char>(inside[cursor]))) {
+		}
+		else {                                                                          // Если значение атрибута не заключено в кавычки, пропускаем его до пробела или конца строки.
+			const std::size_t value_start = cursor;                                         // Запоминаем позицию начала значения атрибута
+			while (cursor < tag_string.size() &&                                            // Пропускаем символы значения атрибута до пробела или конца строки
+                   !std::isspace(static_cast<unsigned char>(tag_string[cursor]))) {
                 ++cursor;
             }
 
-            if (cursor == inside.size() && value_start < inside.size()) {
+			if (cursor == tag_string.size() && value_start < tag_string.size()) {           // Если курсор дошёл до конца строки, а значение атрибута не пустое, то слеш внутри значения не является маркером самозакрытия.
                 return false;
             }
         }
@@ -146,22 +149,23 @@ bool is_self_closing(const std::string& inside, std::size_t cursor) {
 
 // Обрабатываем комментарий и возвращаем управление основному циклу.
 bool parse_comment(
-    const std::string& source,
-    std::size_t& cursor,
-    HtmlToken& token,
-    HtmlAnalysisResult& result,
-    const PositionIndex& positions) {
-    if (source.compare(cursor, 4, "<!--") != 0) {
+	const std::string& source,                      // Исходный HTML-документ, в котором ищем комментарий.
+	std::size_t& cursor,                            // Позиция в исходной строке, с которой начинается поиск комментария; обновляется после обработки.
+	HtmlToken& token,                               // Токен, в который сохраняется информация о найденном комментарии.
+	HtmlAnalysisResult& result,                     // Результат анализа, в который добавляется токен комментария и при необходимости диагностика.
+	const PositionIndex& positions) {               // Объект, позволяющий определить номер строки по смещению в тексте файла.
+
+	if (source.compare(cursor, 4, "<!--") != 0) {           // Если текущая позиция не соответствует началу комментария, возвращаем false.
         return false;
     }
 
-    const std::size_t start = cursor;    // Комментарий сохраняется единым токеном, чтобы его содержимое не разбиралось как теги.
-    const std::size_t end = source.find("-->", cursor + 4);
-    token.type = HtmlTokenType::Comment;
+    const std::size_t start = cursor;                       //Сохраняем позицию начала комментария
+	const std::size_t end = source.find("-->", cursor + 4); // Ищем первый закрывающий маркер комментария
+	token.type = HtmlTokenType::Comment;                    // Устанавливаем тип токена как комментарий
 
-    if (end == std::string::npos) {    // Незакрытый комментарий поглощает остаток файла и сопровождается диагностикой.
-        token.raw_text = source.substr(cursor);
-        add_diagnostic(
+    if (end == std::string::npos) {                         // Проверяем незакрытость комментария
+        token.raw_text = source.substr(cursor);                 // Весь остаток исходного текста сохраняется как содержимое одного токена-комментария
+		add_diagnostic(                                         // Добавляем диагностическое сообщение о незакрытом комментарии в результат анализа
             result,
             "Лексическая ошибка",
             "Для HTML-комментария ожидается завершающая последовательность -->.",
@@ -169,12 +173,12 @@ bool parse_comment(
             start);
         cursor = source.size();
     } else {
-        cursor = end + 3;
-        token.raw_text = source.substr(start, cursor - start);
+		cursor = end + 3;                                       // Сдвигаем курсор на позицию после закрывающего маркера комментария
+		token.raw_text = source.substr(start, cursor - start);  // Сохраняем содержимое комментария в токен, включая открывающий и закрывающий маркеры
     }
 
-    ++result.comments;
-    result.tokens.push_back(token);
+	++result.comments;                                          // Увеличиваем счетчик комментариев в результате анализа
+	result.tokens.push_back(token);                             // Добавляем токен комментария в список токенов результата анализа
     return true;
 }
 
