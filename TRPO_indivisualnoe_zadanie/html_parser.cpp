@@ -1,56 +1,54 @@
 // Подключаем общие объявления проекта.
 #include "Header.h"
+#include "third_party/utfcpp/source/utf8.h"
 
 
-// Индекс координат позволяет получать строку и столбец без повторного просмотра документа.
+// Индекс координат вычисляет номер строки и столбца по запросу.
 class PositionIndex {
 public:
-    explicit PositionIndex(const std::string& source)    // Заранее строим таблицы координат, чтобы диагностики не пересчитывали весь префикс файла.
-        : codepoint_prefix_(source.size() + 1, 0) {
-        line_starts_.push_back(0);
-
-        for (std::size_t i = 0; i < source.size(); ++i) {    // В UTF-8 один символ может занимать несколько байтов, поэтому столбец считаем по начальным байтам кодовых точек.
-            const unsigned char ch = static_cast<unsigned char>(source[i]);
-            const bool continuation = (ch & 0xC0) == 0x80;
-            const bool newline = ch == '\r' || ch == '\n';
-
-            codepoint_prefix_[i + 1] =
-                codepoint_prefix_[i] + ((!continuation && !newline) ? 1u : 0u);
-
-            if (ch == '\r') {    // CRLF считается одним переводом строки; отдельно поддерживаются CR и LF.
-                if (i + 1 < source.size() && source[i + 1] == '\n') {
-                    line_starts_.push_back(i + 2);
-                } else {
-                    line_starts_.push_back(i + 1);
-                }
-            } else if (ch == '\n' &&
-                       (i == 0 || source[i - 1] != '\r')) {
-                line_starts_.push_back(i + 1);
-            }
-        }
+    explicit PositionIndex(const std::string& source)
+        : source_(source) {
     }
 
     // Возвращаем координаты с нумерацией строк и столбцов от единицы.
     std::pair<std::size_t, std::size_t> at(std::size_t offset) const {
-        if (offset >= codepoint_prefix_.size()) {
-            offset = codepoint_prefix_.size() - 1;
+        offset = std::min(offset, source_.size());
+
+        std::size_t line = 1;
+        std::size_t line_start = 0;
+
+        // Находим начало строки, в которой находится заданное смещение.
+        for (std::size_t i = 0; i < offset; ++i) {
+            if (source_[i] == '\r') {
+                ++line;
+
+                if (i + 1 < offset && source_[i + 1] == '\n') {
+                    ++i;
+                }
+
+                line_start = i + 1;
+            } else if (source_[i] == '\n') {
+                ++line;
+                line_start = i + 1;
+            }
         }
 
-        const auto it = std::upper_bound(    // Двоичный поиск находит последнюю строку, начавшуюся не позже заданного смещения.
-            line_starts_.begin(), line_starts_.end(), offset);
-        const std::size_t line_index =
-            static_cast<std::size_t>(it - line_starts_.begin() - 1);
-        const std::size_t line_start = line_starts_[line_index];
+        // Библиотека считает UTF-8 кодовые точки вместо отдельных байтов.
+        std::size_t column = 1;
+        try {
+            column += utf8::distance(
+                source_.begin() + line_start,
+                source_.begin() + offset);
+        } catch (const utf8::exception&) {
+            // При некорректном UTF-8 сохраняем возможность показать диагностику.
+            column += offset - line_start;
+        }
 
-        return {
-            line_index + 1,
-            codepoint_prefix_[offset] - codepoint_prefix_[line_start] + 1
-        };
+        return {line, column};
     }
 
 private:
-    std::vector<std::size_t> line_starts_;    // Байтовые смещения начала каждой строки исходного документа.
-    std::vector<std::size_t> codepoint_prefix_;    // Число UTF-8 кодовых точек до каждого байтового смещения.
+    const std::string& source_;
 };
 
 // Нормализуем регистр ASCII-имён тегов.
