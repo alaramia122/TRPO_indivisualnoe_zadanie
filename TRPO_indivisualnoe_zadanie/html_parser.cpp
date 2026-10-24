@@ -108,9 +108,6 @@ bool is_self_closing(const std::string& inside, std::size_t cursor) {
         }
 
         if (cursor >= inside.size() || inside[cursor] != '=') {
-            if (cursor < inside.size()) {
-                ++cursor;
-            }
             continue;
         }
 
@@ -132,9 +129,14 @@ bool is_self_closing(const std::string& inside, std::size_t cursor) {
                 ++cursor;
             }
         } else {
+            const std::size_t value_start = cursor;
             while (cursor < inside.size() &&
                    !std::isspace(static_cast<unsigned char>(inside[cursor]))) {
                 ++cursor;
+            }
+
+            if (cursor == inside.size() && value_start < inside.size()) {
+                return false;
             }
         }
     }
