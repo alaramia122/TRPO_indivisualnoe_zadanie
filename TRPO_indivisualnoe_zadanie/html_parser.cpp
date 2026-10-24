@@ -84,7 +84,7 @@ void add_diagnostic(
 
 // Определяем самозакрытие, не принимая слеш внутри значения атрибута за маркер.
 bool is_self_closing(const std::string& inside, std::size_t cursor) {
-    if (inside.empty() || inside.back() != '/') {    // Слеш считается маркером только вне имени и значения атрибута.
+    if (inside.empty() || inside.back() != '/') {
         return false;
     }
 
@@ -94,53 +94,47 @@ bool is_self_closing(const std::string& inside, std::size_t cursor) {
             ++cursor;
         }
 
-        if (cursor == inside.size() - 1 && inside[cursor] == '/') {    // Дошли до последнего слеша вне значения — тег самозакрывающийся.
-            return true;
+        if (cursor == inside.size() - 1) {
+            return inside[cursor] == '/';
         }
 
-        const std::size_t name_start = cursor;
         while (cursor < inside.size() && name_char(inside[cursor])) {
             ++cursor;
         }
 
-        if (cursor == name_start) {
-            ++cursor;
-            continue;
-        }
-
         while (cursor < inside.size() &&
                std::isspace(static_cast<unsigned char>(inside[cursor]))) {
             ++cursor;
         }
 
-        if (cursor >= inside.size() || inside[cursor] != '=') {    // Атрибут без '=' является булевым и значения не имеет.
+        if (cursor >= inside.size() || inside[cursor] != '=') {
+            if (cursor < inside.size()) {
+                ++cursor;
+            }
             continue;
         }
 
         ++cursor;
+
         while (cursor < inside.size() &&
                std::isspace(static_cast<unsigned char>(inside[cursor]))) {
             ++cursor;
         }
 
-        if (cursor < inside.size() &&    // Значение в кавычках пропускаем целиком: слеш внутри него не завершает тег.
+        if (cursor < inside.size() &&
             (inside[cursor] == '"' || inside[cursor] == '\'')) {
             const char quote = inside[cursor++];
             while (cursor < inside.size() && inside[cursor] != quote) {
                 ++cursor;
             }
+
             if (cursor < inside.size()) {
                 ++cursor;
             }
         } else {
-            const std::size_t value_start = cursor;
             while (cursor < inside.size() &&
                    !std::isspace(static_cast<unsigned char>(inside[cursor]))) {
                 ++cursor;
-            }
-
-            if (cursor == inside.size() && value_start < inside.size()) {
-                return false;
             }
         }
     }
