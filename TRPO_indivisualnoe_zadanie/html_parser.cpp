@@ -1,50 +1,18 @@
 // Подключаем общие объявления проекта.
 #include "Header.h"
-#include "../third_party/utfcpp/source/utf8.h"
 
-
-// Индекс координат вычисляет номер строки и столбца по запросу.
+// Считаем строки по символу перевода строки \n.
 class PositionIndex {
 public:
     explicit PositionIndex(const std::string& source)
         : source_(source) {
     }
 
-    // Возвращаем координаты с нумерацией строк и столбцов от единицы.
-    std::pair<std::size_t, std::size_t> at(std::size_t offset) const {
+    // Возвращаем номер строки, начиная с единицы.
+    std::size_t at(std::size_t offset) const {
         offset = std::min(offset, source_.size());
-
-        std::size_t line = 1;
-        std::size_t line_start = 0;
-
-        // Находим начало строки, в которой находится заданное смещение.
-        for (std::size_t i = 0; i < offset; ++i) {
-            if (source_[i] == '\r') {
-                ++line;
-
-                if (i + 1 < offset && source_[i + 1] == '\n') {
-                    ++i;
-                }
-
-                line_start = i + 1;
-            } else if (source_[i] == '\n') {
-                ++line;
-                line_start = i + 1;
-            }
-        }
-
-        // Библиотека считает UTF-8 кодовые точки вместо отдельных байтов.
-        std::size_t column = 1;
-        try {
-            column += utf8::distance(
-                source_.begin() + line_start,
-                source_.begin() + offset);
-        } catch (const utf8::exception&) {
-            // При некорректном UTF-8 сохраняем возможность показать диагностику.
-            column += offset - line_start;
-        }
-
-        return {line, column};
+        return 1 + static_cast<std::size_t>(
+            std::count(source_.begin(), source_.begin() + offset, '\n'));
     }
 
 private:
@@ -114,10 +82,8 @@ void add_diagnostic(
     const std::string& message,
     const PositionIndex& positions,
     std::size_t offset) {
-    const auto position = positions.at(offset);    // Все сообщения используют один формат координат, рассчитанный PositionIndex.
-    result.diagnostics.push_back({
-        category, message, position.first, position.second
-    });
+    const std::size_t line = positions.at(offset);
+    result.diagnostics.push_back({ category, message, line });
 }
 
 // Определяем самозакрытие, не принимая слеш внутри значения атрибута за маркер.
@@ -489,9 +455,7 @@ bool parse_tag(
             raw_token.type = HtmlTokenType::Text;
             raw_token.offset = raw_start;
 
-            const auto raw_position = positions.at(raw_start);
-            raw_token.line = raw_position.first;
-            raw_token.column = raw_position.second;
+            raw_token.line = positions.at(raw_start);
             raw_token.raw_text = source.substr(raw_start, raw_limit - raw_start);
 
             result.tokens.push_back(raw_token);
@@ -511,12 +475,9 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) {
 
     while (cursor < source.size()) {    // На каждой итерации cursor должен продвигаться к следующему фрагменту документа.
         const std::size_t start = cursor;
-        const auto position = positions.at(start);
-
         HtmlToken token;    // Позиция токена фиксируется до разбора, пока cursor указывает на его первый байт.
         token.offset = start;
-        token.line = position.first;
-        token.column = position.second;
+        token.line = positions.at(start);
 
         if (parse_comment(source, cursor, token, result, positions)) {    // Проверяем более специфичные конструкции раньше обычного тега или текста.
             continue;
