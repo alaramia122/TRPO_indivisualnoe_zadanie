@@ -47,7 +47,7 @@ std::size_t find_raw_text_end(
             }
         }
 
-        if (!matches) {
+        if (!matches) { // Проверяем условие, от которого зависит дальнейшая обработка.
             continue; // Переходим к следующей позиции исходного текста.
         }
 
@@ -65,14 +65,14 @@ std::size_t find_raw_text_end(
 
 // Проверяем символ, допустимый в имени тега или атрибута.
 bool name_char(char value) { // value — символ, проверяемый на допустимость в имени тега или атрибута.
-    return std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '_' ||
+    return std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '_' || // Возвращаем вычисленный результат вызывающей функции.
            value == ':';
 }
 
 
 // Пропускаем пробельные символы и обновляем позицию курсора.
 void skip_spaces(const std::string& text, std::size_t& cursor) { // text — анализируемая строка; cursor — позиция, которая будет обновлена.
-    while (cursor < text.size() &&
+    while (cursor < text.size() && // Повторяем действия, пока курсор не достигнет нужной границы.
            std::isspace(static_cast<unsigned char>(text[cursor]))) { // Пока текущий символ является пробельным.
         ++cursor; // Переходим к следующему символу.
     }
@@ -86,11 +86,11 @@ std::size_t find_tag_end(const std::string& source, std::size_t start) { // sour
         const char ch = source[cursor]; // Считываем текущий символ.
 
         if (quote != '\0') { // Если кавычка открыта, '>' внутри значения не завершает тег.
-            if (ch == quote) {
+            if (ch == quote) { // Проверяем условие, от которого зависит дальнейшая обработка.
                 quote = '\0'; // Закрывающая кавычка завершает значение.
             }
         } else if (ch == '"' || ch == '\'') { // Запоминаем тип открывающей кавычки.
-            quote = ch;
+            quote = ch; // Обновляем состояние поиска внутри кавычек.
         } else if (ch == '>') { // Вне кавычек этот символ завершает тег или декларацию.
             return cursor; // Возвращаем индекс закрывающей скобки.
         }
@@ -114,60 +114,60 @@ void add_diagnostic(
 // Определяем самозакрытие
 bool is_self_closing(const std::string& tag_string, std::size_t cursor) { // tag_string — содержимое тега без угловых скобок; cursor — позиция после имени тега.
     if (tag_string.empty() || tag_string.back() != '/') { // Если последний символ не '/', тег не самозакрывающийся.
-        return false;
+        return false; // Сообщаем вызывающей функции, что обработка не выполнена.
     }
 
-    while (cursor < tag_string.size()) {
+    while (cursor < tag_string.size()) { // Повторяем действия, пока курсор не достигнет нужной границы.
         skip_spaces(tag_string, cursor); // Пропускаем пробелы перед очередным атрибутом.
 
         if (cursor == tag_string.size() - 1) { // Последний слеш вне значения атрибута закрывает тег.
-            return tag_string[cursor] == '/';
+            return tag_string[cursor] == '/'; // Возвращаем вычисленный результат вызывающей функции.
         }
 
-        const std::size_t name_start = cursor;
-        while (cursor < tag_string.size() && name_char(tag_string[cursor])) {
-            ++cursor;
+        const std::size_t name_start = cursor; // Запоминаем начало фрагмента, чтобы затем корректно извлечь его из исходной строки.
+        while (cursor < tag_string.size() && name_char(tag_string[cursor])) { // Повторяем действия, пока курсор не достигнет нужной границы.
+            ++cursor; // Обновляем счётчик или позицию для перехода к следующему элементу.
         }
 
         if (cursor == name_start) { // Продвигаемся через некорректный символ, чтобы цикл не застрял.
-            ++cursor;
-            continue;
+            ++cursor; // Обновляем счётчик или позицию для перехода к следующему элементу.
+            continue; // Переходим к следующей итерации цикла.
         }
 
         skip_spaces(tag_string, cursor); // Между именем атрибута и '=' могут быть пробелы.
-        if (cursor >= tag_string.size() || tag_string[cursor] != '=') {
+        if (cursor >= tag_string.size() || tag_string[cursor] != '=') { // Проверяем условие, от которого зависит дальнейшая обработка.
             continue; // Имя атрибута уже прочитано, поэтому курсор продвинулся.
         }
 
-        ++cursor;
+        ++cursor; // Обновляем счётчик или позицию для перехода к следующему элементу.
         skip_spaces(tag_string, cursor); // Пропускаем пробелы после '='.
 
-        if (cursor < tag_string.size() &&
+        if (cursor < tag_string.size() && // Проверяем условие, от которого зависит дальнейшая обработка.
             (tag_string[cursor] == '"' || tag_string[cursor] == '\'')) {
             const char quote = tag_string[cursor++]; // Запоминаем открывающую кавычку и переходим к значению.
             while (cursor < tag_string.size() && tag_string[cursor] != quote) { // Пропускаем значение до закрывающей кавычки.
                 ++cursor; // Продолжаем поиск закрывающей кавычки.
             }
 
-            if (cursor == tag_string.size()) {
+            if (cursor == tag_string.size()) { // Проверяем условие, от которого зависит дальнейшая обработка.
                 return false; // Незакрытое значение не позволяет подтвердить самозакрытие.
             }
 
             ++cursor; // Пропускаем закрывающую кавычку.
         } else {
-            const std::size_t value_start = cursor;
-            while (cursor < tag_string.size() &&
+            const std::size_t value_start = cursor; // Запоминаем начало фрагмента, чтобы затем корректно извлечь его из исходной строки.
+            while (cursor < tag_string.size() && // Повторяем действия, пока курсор не достигнет нужной границы.
                    !std::isspace(static_cast<unsigned char>(tag_string[cursor]))) { // Некавыченное значение продолжается до пробела.
                 ++cursor; // Переходим к следующему символу значения.
             }
 
-            if (cursor == tag_string.size() && value_start < tag_string.size()) {
+            if (cursor == tag_string.size() && value_start < tag_string.size()) { // Проверяем условие, от которого зависит дальнейшая обработка.
                 return false; // Завершающий слеш поглощён некавыченным значением.
             }
         }
     }
 
-    return true;
+    return true; // Сообщаем вызывающей функции об успешной обработке.
 }
 
 // Обрабатываем комментарий и возвращаем управление основному циклу.
@@ -179,7 +179,7 @@ bool parse_comment(
 	const PositionIndex& positions) {               // Объект, позволяющий определить номер строки по смещению в тексте файла.
 
 	if (source.compare(cursor, 4, "<!--") != 0) {           // Если текущая позиция не соответствует началу комментария, возвращаем false.
-        return false;
+        return false; // Сообщаем вызывающей функции, что обработка не выполнена.
     }
 
     const std::size_t start = cursor;                       //Сохраняем позицию начала комментария
@@ -194,7 +194,7 @@ bool parse_comment(
             "Для HTML-комментария ожидается завершающая последовательность -->.",
             positions,
             start);
-        cursor = source.size();
+        cursor = source.size(); // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
     } else {
 		cursor = end + 3;                                       // Сдвигаем курсор на позицию после закрывающего маркера комментария
 		token.raw_text = source.substr(start, cursor - start);  // Сохраняем содержимое комментария в токен, включая открывающий и закрывающий маркеры
@@ -202,7 +202,7 @@ bool parse_comment(
 
 	++result.comments;                                          // Увеличиваем счетчик комментариев в результате анализа
 	result.tokens.push_back(token);                             // Добавляем токен комментария в список токенов результата анализа
-    return true;
+    return true; // Сообщаем вызывающей функции об успешной обработке.
 }
 
 // Разбираем декларацию или инструкцию обработки с учётом кавычек.
@@ -212,31 +212,31 @@ bool parse_declaration(
     HtmlToken& token,                       // Токен для сохранения декларации.
     HtmlAnalysisResult& result,             // Результат анализа, в который добавляется токен и диагностика.
     const PositionIndex& positions) {      // Объект для определения номера строки по смещению.
-    if (source.compare(cursor, 2, "<!") != 0 &&
+    if (source.compare(cursor, 2, "<!") != 0 && // Проверяем условие, от которого зависит дальнейшая обработка.
         source.compare(cursor, 2, "<?") != 0) {
-        return false;
+        return false; // Сообщаем вызывающей функции, что обработка не выполнена.
     }
 
-    const std::size_t start = cursor;
+    const std::size_t start = cursor; // Запоминаем начало фрагмента, чтобы затем корректно извлечь его из исходной строки.
     const std::size_t end = find_tag_end(source, cursor + 2); // Ищем '>' за начальным маркером декларации с учётом кавычек.
 
     token.type = HtmlTokenType::Declaration; // Сохраняем декларацию целиком, не разбирая её содержимое.
-    if (end == std::string::npos) {
-        token.raw_text = source.substr(cursor);
-        add_diagnostic(
+    if (end == std::string::npos) { // Проверяем условие, от которого зависит дальнейшая обработка.
+        token.raw_text = source.substr(cursor); // Сохраняем исходный текст фрагмента без изменения содержимого.
+        add_diagnostic( // Добавляем диагностику для некорректной или незавершённой конструкции.
             result,
             "Лексическая ошибка",
             "Для HTML-декларации ожидается завершающий символ >.",
             positions,
             start);
-        cursor = source.size();
+        cursor = source.size(); // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
     } else {
-        cursor = end + 1;
-        token.raw_text = source.substr(start, cursor - start);
+        cursor = end + 1; // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
+        token.raw_text = source.substr(start, cursor - start); // Сохраняем исходный текст фрагмента без изменения содержимого.
     }
 
-    result.tokens.push_back(token);
-    return true;
+    result.tokens.push_back(token); // Добавляем сформированный токен в общий результат разбора.
+    return true; // Сообщаем вызывающей функции об успешной обработке.
 }
 
 // Сохраняем обычный текст до следующего открывающего углового символа.
@@ -246,12 +246,12 @@ void parse_text(
     HtmlToken& token,                   // Токен, в который сохраняется текстовый фрагмент.
     HtmlAnalysisResult& result) {       // Результат анализа со списком токенов и счётчиком текстовых фрагментов.
     const std::size_t end = source.find('<', cursor); // Ищем следующий потенциальный тег, завершающий текстовый фрагмент.
-    cursor = end == std::string::npos ? source.size() : end;
+    cursor = end == std::string::npos ? source.size() : end; // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
 
-    token.type = HtmlTokenType::Text;
-    token.raw_text = source.substr(token.offset, cursor - token.offset);
+    token.type = HtmlTokenType::Text; // Указываем тип найденного фрагмента.
+    token.raw_text = source.substr(token.offset, cursor - token.offset); // Сохраняем исходный текст фрагмента без изменения содержимого.
     ++result.text_segments;
-    result.tokens.push_back(token);
+    result.tokens.push_back(token); // Добавляем сформированный токен в общий результат разбора.
 }
 
 // Читаем атрибуты открывающего тега, сохраняя значения без ограничивающих кавычек.
@@ -261,16 +261,16 @@ void parse_attributes(
     HtmlToken& token,                       // Токен, в который сохраняются найденные атрибуты.
     HtmlAnalysisResult& result,             // Результат анализа со счётчиком атрибутов и диагностикой.
     const PositionIndex& positions) {      // Объект для определения строки по смещению в исходном документе.
-    while (cursor < inside.size()) {
+    while (cursor < inside.size()) { // Повторяем действия, пока курсор не достигнет нужной границы.
         skip_spaces(inside, cursor); // Пропускаем пробелы между атрибутами.
 
-        if (cursor < inside.size() && inside[cursor] == '/') {
+        if (cursor < inside.size() && inside[cursor] == '/') { // Проверяем условие, от которого зависит дальнейшая обработка.
             ++cursor; // Пропускаем разделительный слеш самозакрывающегося тега.
-            continue;
+            continue; // Переходим к следующей итерации цикла.
         }
 
-        if (cursor >= inside.size()) {
-            break;
+        if (cursor >= inside.size()) { // Проверяем условие, от которого зависит дальнейшая обработка.
+            break; // Завершаем цикл, поскольку дальнейший поиск не требуется.
         }
 
         const std::size_t name_start = cursor; // Запоминаем начало имени атрибута.
@@ -278,20 +278,20 @@ void parse_attributes(
             ++cursor; // Переходим к следующему символу имени.
         }
 
-        if (cursor == name_start) {
+        if (cursor == name_start) { // Проверяем условие, от которого зависит дальнейшая обработка.
             ++cursor; // Пропускаем неожиданный символ, чтобы продолжить разбор.
-            continue;
+            continue; // Переходим к следующей итерации цикла.
         }
 
-        HtmlAttribute attribute;
+        HtmlAttribute attribute; // Создаём структуру для сохранения атрибута.
         attribute.name = inside.substr(name_start, cursor - name_start); // Сохраняем имя атрибута.
 
-        skip_spaces(inside, cursor);
-        if (cursor < inside.size() && inside[cursor] == '=') {
-            ++cursor;
+        skip_spaces(inside, cursor); // Пропускаем пробельные символы перед следующим элементом.
+        if (cursor < inside.size() && inside[cursor] == '=') { // Проверяем условие, от которого зависит дальнейшая обработка.
+            ++cursor; // Обновляем счётчик или позицию для перехода к следующему элементу.
             skip_spaces(inside, cursor); // Пропускаем пробелы перед значением.
 
-            if (cursor < inside.size() &&
+            if (cursor < inside.size() && // Проверяем условие, от которого зависит дальнейшая обработка.
                 (inside[cursor] == '"' || inside[cursor] == '\'')) {
                 const char quote = inside[cursor++]; // Запоминаем тип кавычки и переходим к значению.
                 const std::size_t value_start = cursor; // Запоминаем начало значения без открывающей кавычки.
@@ -301,19 +301,19 @@ void parse_attributes(
                 }
 
                 attribute.value = inside.substr(value_start, cursor - value_start); // Сохраняем значение без ограничивающих кавычек.
-                if (cursor < inside.size()) {
+                if (cursor < inside.size()) { // Проверяем условие, от которого зависит дальнейшая обработка.
                     ++cursor; // Пропускаем закрывающую кавычку.
                 } else {
-                    add_diagnostic(
+                    add_diagnostic( // Добавляем диагностику для некорректной или незавершённой конструкции.
                         result,
                         "Лексическая ошибка",
                         "Для значения атрибута ожидается закрывающая кавычка.",
                         positions,
-                        token.offset);
+                        token.offset); // Записываем извлечённые данные в текущий токен.
                 }
             } else {
                 const std::size_t value_start = cursor; // Запоминаем начало некавыченного значения.
-                while (cursor < inside.size() &&
+                while (cursor < inside.size() && // Повторяем действия, пока курсор не достигнет нужной границы.
                        !std::isspace(static_cast<unsigned char>(inside[cursor]))) { // Читаем значение до пробельного символа.
                     ++cursor; // Продвигаемся по значению.
                 }
@@ -336,18 +336,18 @@ bool parse_tag(
     const std::size_t start = cursor; // Запоминаем начало тега для токена и диагностик.
     const std::size_t end = find_tag_end(source, start + 1); // Ищем '>' с учётом кавычек внутри атрибутов.
 
-    if (end == std::string::npos) {
-        add_diagnostic(
+    if (end == std::string::npos) { // Проверяем условие, от которого зависит дальнейшая обработка.
+        add_diagnostic( // Добавляем диагностику для некорректной или незавершённой конструкции.
             result,
             "Лексическая ошибка",
             "Для тега ожидается завершающий символ >.",
             positions,
             start);
-        token.type = HtmlTokenType::Text;
-        token.raw_text = source.substr(start);
-        result.tokens.push_back(token);
-        cursor = source.size();
-        return false;
+        token.type = HtmlTokenType::Text; // Указываем тип найденного фрагмента.
+        token.raw_text = source.substr(start); // Сохраняем исходный текст фрагмента без изменения содержимого.
+        result.tokens.push_back(token); // Добавляем сформированный токен в общий результат разбора.
+        cursor = source.size(); // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
+        return false; // Сообщаем вызывающей функции, что обработка не выполнена.
     }
 
     cursor = end + 1; // Перемещаем курсор за весь найденный тег.
@@ -358,7 +358,7 @@ bool parse_tag(
     skip_spaces(inside, name_cursor); // Пропускаем пробелы перед именем или начальным слешем.
 
     const bool closing = name_cursor < inside.size() && inside[name_cursor] == '/'; // Начальный слеш обозначает закрывающий тег.
-    if (closing) {
+    if (closing) { // Проверяем условие, от которого зависит дальнейшая обработка.
         ++name_cursor; // Пропускаем слеш, обозначающий закрывающий тег.
         skip_spaces(inside, name_cursor); // Пропускаем пробелы между слешем и именем.
     }
@@ -368,45 +368,45 @@ bool parse_tag(
         ++name_cursor; // Продвигаемся по имени.
     }
 
-    if (name_cursor == name_start) {
-        add_diagnostic(
+    if (name_cursor == name_start) { // Проверяем условие, от которого зависит дальнейшая обработка.
+        add_diagnostic( // Добавляем диагностику для некорректной или незавершённой конструкции.
             result,
             "Лексическая ошибка",
             "После символа < ожидается имя тега.",
             positions,
             start);
-        token.type = HtmlTokenType::Text;
-        result.tokens.push_back(token);
-        return true;
+        token.type = HtmlTokenType::Text; // Указываем тип найденного фрагмента.
+        result.tokens.push_back(token); // Добавляем сформированный токен в общий результат разбора.
+        return true; // Сообщаем вызывающей функции об успешной обработке.
     }
 
     token.name = lower_ascii(inside.substr(name_start, name_cursor - name_start)); // Нормализуем имя тега.
 
-    if (closing) {
+    if (closing) { // Проверяем условие, от которого зависит дальнейшая обработка.
         std::size_t tail = name_cursor; // Проверяем оставшуюся часть закрывающего тега.
         skip_spaces(inside, tail); // После имени закрывающего тега разрешены только пробелы.
 
-        if (tail != inside.size()) {
-            add_diagnostic(
+        if (tail != inside.size()) { // Проверяем условие, от которого зависит дальнейшая обработка.
+            add_diagnostic( // Добавляем диагностику для некорректной или незавершённой конструкции.
                 result,
                 "Лексическая ошибка",
                 "После имени закрывающего тега обнаружены лишние символы.",
                 positions,
                 start);
-            token.type = HtmlTokenType::Text;
-            result.tokens.push_back(token);
-            return true;
+            token.type = HtmlTokenType::Text; // Указываем тип найденного фрагмента.
+            result.tokens.push_back(token); // Добавляем сформированный токен в общий результат разбора.
+            return true; // Сообщаем вызывающей функции об успешной обработке.
         }
 
-        token.type = HtmlTokenType::CloseTag;
+        token.type = HtmlTokenType::CloseTag; // Указываем тип найденного фрагмента.
         ++result.closing_tags;
     } else {
         const bool self_closing = is_self_closing(inside, name_cursor); // Проверяем завершающий слеш вне значений атрибутов.
-        token.type = self_closing
+        token.type = self_closing // Указываем тип найденного фрагмента.
             ? HtmlTokenType::SelfClosingTag
             : HtmlTokenType::OpenTag;
 
-        if (self_closing) {
+        if (self_closing) { // Проверяем условие, от которого зависит дальнейшая обработка.
             ++result.self_closing_tags;
         } else {
             ++result.opening_tags;
@@ -417,13 +417,13 @@ bool parse_tag(
 
     result.tokens.push_back(token); // Добавляем разобранный тег в результат.
 
-    if (token.type == HtmlTokenType::OpenTag &&
+    if (token.type == HtmlTokenType::OpenTag && // Проверяем условие, от которого зависит дальнейшая обработка.
         (token.name == "script" || token.name == "style")) {
         const std::size_t raw_end = find_raw_text_end(source, cursor, token.name); // Ищем закрывающий script/style, не разбирая содержимое как HTML.
         const std::size_t raw_start = cursor; // Сохраняем позицию сразу после открывающего тега.
         const std::size_t raw_limit = raw_end == std::string::npos ? source.size() : raw_end; // При отсутствии закрывающего тега берём остаток документа.
 
-        if (raw_start < raw_limit) {
+        if (raw_start < raw_limit) { // Проверяем условие, от которого зависит дальнейшая обработка.
             HtmlToken raw_token; // Создаём отдельный токен для содержимого script/style.
             raw_token.type = HtmlTokenType::Text; // Содержимое сохраняется как текст, а не как вложенная разметка.
             raw_token.offset = raw_start; // Запоминаем начальное смещение фрагмента.
@@ -434,10 +434,10 @@ bool parse_tag(
             ++result.text_segments; // Увеличиваем число текстовых фрагментов.
         }
 
-        cursor = raw_limit;
+        cursor = raw_limit; // Обновляем позицию разбора, чтобы продолжить после обработанного фрагмента.
     }
 
-    return true;
+    return true; // Сообщаем вызывающей функции об успешной обработке.
 }
 
 // Последовательно преобразуем исходный HTML в токены и лексические диагностики.
@@ -452,7 +452,7 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // sour
         token.line = positions.at(start); // Определяем строку начала токена.
 
         if (parse_comment(source, cursor, token, result, positions)) { // Сначала обрабатываем комментарии, чтобы их содержимое не разбиралось как теги.
-            continue;
+            continue; // Переходим к следующей итерации цикла.
         }
 
         if (parse_declaration(source, cursor, token, result, positions)) { // Проверяем декларации и инструкции обработки.
