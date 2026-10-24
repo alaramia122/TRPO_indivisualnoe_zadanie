@@ -5,15 +5,15 @@
 class PositionIndex {
 public:
     PositionIndex(const std::string& source)
-        : source_(source) {
-    }
+        : source_(source) {}
 
     // Возвращаем номер строки, начиная с единицы.
     std::size_t at(std::size_t offset) const {
-        offset = min(offset, source_.size());
-        return 1 + static_cast<std::size_t>(
-            std::count(source_.begin(), source_.begin() + offset, '\n'));
-    }
+
+		offset = min(offset, source_.size());       //контроллируем, чтобы offset не выходил за пределы строки
+		return 1 + static_cast<std::size_t>(std::count(source_.begin(), source_.begin() + offset, '\n'));   //считаем количество символов перевода строки     
+    }                                                                                                       //до указанного смещения и прибавляем 1
+
 
 private:
     const std::string& source_;
@@ -21,32 +21,29 @@ private:
 
 // Нормализуем регистр ASCII-имён тегов.
 std::string lower_ascii(std::string value) {
-    std::transform(    // Имена HTML-тегов сравниваются без учёта регистра.
-        value.begin(),
-        value.end(),
-        value.begin(),
-        [](unsigned char ch) {
-            return static_cast<char>(std::tolower(ch));
-        });
+    for (char& ch : value) {
+        ch = static_cast<char>(
+            std::tolower(static_cast<unsigned char>(ch)));
+    }
     return value;
 }
 
 std::size_t find_raw_text_end(    // Ищем закрывающий тег в script/style, не разбирая содержимое как HTML.
-    const std::string& source,
-    std::size_t start,
-    const std::string& tag_name) {
+    const std::string& source,          //весь исходный HTML-документ
+    std::size_t start,                  //позиция, с которой нужно начинать поиск
+    const std::string& tag_name) {      //имя тега
+
     const std::string closing = "</" + tag_name;    // Ищем начало закрывающего тега, а не просто совпадение подстроки.
 
-    for (std::size_t pos = start;
-         pos + closing.size() <= source.size();
-         ++pos) {
+	for (std::size_t pos = start; pos + closing.size() <= source.size(); ++pos) {   //Проверяем все позиции в исходной строке, начиная с позиции start и до конца строки
+
         bool matches = true;
 
-        for (std::size_t j = 0; j < closing.size(); ++j) {
-            const unsigned char ch =
-                static_cast<unsigned char>(source[pos + j]);
+        for (std::size_t j = 0; j < closing.size(); ++j) {                              //Сравниваем символы исходного документа с искомой строкой
+            
+            char ch = source[pos + j];
 
-            if (static_cast<char>(std::tolower(ch)) != closing[j]) {
+            if (static_cast<char>(std::tolower(static_cast<unsigned char>(ch))) != closing[j]) {
                 matches = false;
                 break;
             }
@@ -56,11 +53,11 @@ std::size_t find_raw_text_end(    // Ищем закрывающий тег в s
             continue;
         }
 
-        const std::size_t after_name = pos + closing.size();    // После имени должен идти разделитель, иначе, например, </scripted> не завершает script.
-        if (after_name == source.size() ||
-            std::isspace(static_cast<unsigned char>(source[after_name])) ||
-            source[after_name] == '>' ||
-            source[after_name] == '/') {
+        const std::size_t after_name = pos + closing.size();    // После имени должен идти разделитель
+        if (after_name == source.size() ||                                      // Имя заканчивается в конце строки
+			std::isspace(static_cast<unsigned char>(source[after_name])) ||     // После имени идёт пробельный символ
+			source[after_name] == '>' ||                                        // После имени идёт символ '>'
+			source[after_name] == '/') {                                        // После имени идёт символ '/'
             return pos;
         }
     }
@@ -69,10 +66,9 @@ std::size_t find_raw_text_end(    // Ищем закрывающий тег в s
 }
 
 // Проверяем символ, допустимый в имени тега или атрибута.
-bool name_char(char ch) {
-    const unsigned char value = static_cast<unsigned char>(ch);    // Помимо ASCII принимаем байты UTF-8, чтобы не отбрасывать не-латинские имена.
-    return std::isalnum(value) || ch == '-' || ch == '_' ||
-           ch == ':' || value >= 128;
+bool name_char(char value) {
+    return std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '_' ||
+           value == ':';
 }
 
 // Добавляем диагностику с координатами исходного документа.
@@ -82,6 +78,7 @@ void add_diagnostic(
     const std::string& message,
     const PositionIndex& positions,
     std::size_t offset) {
+
     const std::size_t line = positions.at(offset);
     result.diagnostics.push_back({ category, message, line });
 }
