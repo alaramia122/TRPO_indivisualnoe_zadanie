@@ -69,80 +69,15 @@ bool is_heading_tag(const std::string& name) {
         name[1] <= '6';
 }
 
-// Преобразуем кодовую точку Unicode в UTF-8 средствами Windows API.
-void append_utf8(std::string& output, unsigned long codepoint) {
-    wchar_t wide[2];
-    int wide_size = 1;
-    if (codepoint > 0xFFFF) {
-        codepoint -= 0x10000;
-        wide[0] = static_cast<wchar_t>(0xD800 + (codepoint >> 10));
-        wide[1] = static_cast<wchar_t>(0xDC00 + (codepoint & 0x3FF));
-        wide_size = 2;
-    } else wide[0] = static_cast<wchar_t>(codepoint);
-    char bytes[4];
-    const int size = WideCharToMultiByte(CP_UTF8, 0, wide, wide_size, bytes, static_cast<int>(sizeof(bytes)), nullptr, nullptr);
-    if (size > 0) output.append(bytes, static_cast<std::size_t>(size));
-}
-
-// Декодирует распространённые HTML-сущности и числовые ссылки.
-std::string decode_html_entities(const std::string& value) {
-    std::string result;    // Обычные символы копируются напрямую, а конструкции с амперсандом проверяются как HTML-сущности.
-    for (std::size_t i = 0; i < value.size();) {
-        if (value[i] != '&') {
-            result += value[i++];
-            continue;
-        }
-        const std::size_t semicolon = value.find(';', i + 1);
-        if (semicolon == std::string::npos || semicolon - i > 12) {
-            result += value[i++];
-            continue;
-        }
-        const std::string entity = value.substr(i + 1, semicolon - i - 1);    // Выделяем имя сущности между амперсандом и точкой с запятой.
-        if (entity == "amp") result += '&';
-        else if (entity == "lt") result += '<';
-        else if (entity == "gt") result += '>';
-        else if (entity == "quot") result += '"';
-        else if (entity == "apos") result += '\'';
-        else if (entity == "nbsp") result += ' ';
-        else if (entity == "ndash") result += "\xE2\x80\x93";
-        else if (entity == "mdash") result += "\xE2\x80\x94";
-        else if (entity == "hellip") result += "\xE2\x80\xA6";
-        else if (entity == "copy") result += "\xC2\xA9";
-        else if (entity == "reg") result += "\xC2\xAE";
-        else if (!entity.empty() && entity[0] == '#') {    // Числовые ссылки могут задаваться десятичным или шестнадцатеричным кодом Unicode.
-            try {
-                const bool hexadecimal = entity.size() > 2 &&    // Определяем основание системы счисления числовой ссылки.
-                    (entity[1] == 'x' || entity[1] == 'X');
-                const std::string digits = entity.substr(hexadecimal ? 2 : 1);    // Выделяем цифры числовой ссылки без её префикса.
-                const unsigned long codepoint = std::stoul(    // Получаем числовой код символа из HTML-сущности.
-                    digits, nullptr, hexadecimal ? 16 : 10);
-                if (codepoint == 0 || codepoint > 0x10FFFF ||
-                    (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
-                    result.append(value, i, semicolon - i + 1);
-                } else {
-                    append_utf8(result, codepoint);
-                }
-            } catch (...) {
-                result.append(value, i, semicolon - i + 1);
-            }
-        } else {
-            result.append(value, i, semicolon - i + 1);
-        }
-        i = semicolon + 1;
-    }
-    return result;    // Возвращаем сформированный результат обработки.
-}
-
 // Храним извлечённые сведения отдельно от логики обхода HTML-токенов.
 struct DocumentInfo {
     std::string title;
-    std::vector<std::string> metadata, headings, page_text, links, images, forms, canonical_urls;
+    std::vector<std::string> metadata, headings, page_text;
 };
 
 // Сохраняем контекст открытых элементов между соседними токенами.
 struct ExtractionState {
-    std::string text_tag, text_buffer, link_text, link_href, raw_tag;
-    bool collecting_link = false;
+    std::string text_tag, text_buffer, raw_tag;
     bool inside_raw_text = false;
 };
 
@@ -150,7 +85,7 @@ struct ExtractionState {
 void extract_metadata(const HtmlToken& token, DocumentInfo& info) {
     const std::string name = get_attribute_value(token, "name");
     const std::string property = get_attribute_value(token, "property");
-    const std::string content = decode_html_entities(get_attribute_value(token, "content"));
+    const std::string content = get_attribute_value(token, "content");
     const std::string charset = get_attribute_value(token, "charset");
     if (!charset.empty()) info.metadata.push_back("Кодировка: " + charset);    // Кодировку сохраняем отдельно: для неё не требуется атрибут content.
     if (!content.empty() &&
@@ -163,32 +98,6 @@ void extract_metadata(const HtmlToken& token, DocumentInfo& info) {
     }
 }
 
-// Формируем описание изображения по alt и адресу ресурса.
-void extract_image(const HtmlToken& token, DocumentInfo& info) {
-    const std::string alt = normalize_text(decode_html_entities(get_attribute_value(token, "alt")));
-    std::string src = get_attribute_value(token, "src");
-    if (src.empty()) src = get_attribute_value(token, "srcset");    // Используем srcset только как запасной источник, если src отсутствует.
-    if ((!alt.empty() || !src.empty()) && src.find("mc.yandex.ru/watch") == std::string::npos) {    // Не включаем известный счётчик аналитики в список изображений страницы.
-        std::string description = alt.empty() ? "изображение" : alt;
-        if (!src.empty()) description += " [" + src + "]";
-        info.images.push_back(description);
-    }
-}
-
-// Собираем значимые атрибуты элемента формы в одну строку.
-void extract_form_field(const HtmlToken& token, DocumentInfo& info) {
-    std::string field = token.name;
-    const std::string type = get_attribute_value(token, "type");
-    const std::string name = get_attribute_value(token, "name");
-    const std::string placeholder = decode_html_entities(get_attribute_value(token, "placeholder"));
-    const std::string value = decode_html_entities(get_attribute_value(token, "value"));
-    if (!type.empty()) field += " type=" + type;
-    if (!name.empty()) field += " name=" + name;
-    if (!placeholder.empty()) field += " placeholder=" + placeholder;
-    if (!value.empty()) field += " value=" + value;
-    if (field != token.name) info.forms.push_back(field);    // Элемент без дополнительных атрибутов не несёт полезных сведений для отчёта.
-}
-
 // Обрабатываем данные открывающего или самозакрывающегося тега.
 void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionState& state) {
     if (token.name == "script" || token.name == "style") {    // Содержимое script/style не должно попадать в обычный текст страницы.
@@ -196,18 +105,6 @@ void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionStat
         state.raw_tag = state.inside_raw_text ? token.name : "";
     }
     if (token.name == "meta") extract_metadata(token, info);
-    if (token.name == "link" && get_attribute_value(token, "rel") == "canonical") {    // Канонический адрес хранится отдельно от обычных ссылок.
-        const std::string href = get_attribute_value(token, "href");
-        if (!href.empty()) info.canonical_urls.push_back(href);
-    }
-    if (token.name == "img") extract_image(token, info);
-    if (token.name == "input" || token.name == "textarea" ||
-        token.name == "select" || token.name == "button") extract_form_field(token, info);
-    if (token.name == "a" && token.type == HtmlTokenType::OpenTag) {    // Накапливаем текст ссылки до появления соответствующего закрывающего тега.
-        state.link_text.clear();
-        state.link_href = get_attribute_value(token, "href");
-        state.collecting_link = true;
-    }
     if (state.text_tag.empty() && token.type == HtmlTokenType::OpenTag &&    // Для title и заголовков собираем текст из нескольких токенов.
         (token.name == "title" || is_heading_tag(token.name))) {
         state.text_tag = token.name;
@@ -217,9 +114,8 @@ void process_open_tag(const HtmlToken& token, DocumentInfo& info, ExtractionStat
 
 // Добавляем текстовый токен в активные элементы и в текст страницы.
 void process_text_token(const HtmlToken& token, DocumentInfo& info, ExtractionState& state) {
-    const std::string text = decode_html_entities(token.raw_text);
+    const std::string& text = token.raw_text;
     if (!state.text_tag.empty()) state.text_buffer += text;
-    if (state.collecting_link) state.link_text += text;
     if (!state.inside_raw_text) {    // Не извлекаем код скриптов и стилей как пользовательский текст.
         const std::string normalized = normalize_text(text);
         if (normalized.size() >= 2) info.page_text.push_back(normalized);
@@ -231,15 +127,6 @@ void process_close_tag(const HtmlToken& token, DocumentInfo& info, ExtractionSta
     if (token.name == state.raw_tag) {
         state.inside_raw_text = false;
         state.raw_tag.clear();
-    }
-    if (token.name == "a" && state.collecting_link) {
-        const std::string label = normalize_text(state.link_text);
-        std::string link = label.empty() ? state.link_href : label;
-        if (!state.link_href.empty() && !label.empty()) link += " -> " + state.link_href;
-        info.links.push_back(link);
-        state.link_text.clear();
-        state.link_href.clear();
-        state.collecting_link = false;
     }
     if (!state.text_tag.empty() && token.name == state.text_tag) {
         const std::string text = normalize_text(state.text_buffer);
@@ -257,9 +144,7 @@ build_information_sections(const DocumentInfo& info) {
     std::vector<std::pair<std::string, std::vector<std::string>>> sections = {
         {"Название документа", {info.title.empty() ? "(пусто)" : info.title}},
         {"Метаданные", info.metadata}, {"Заголовки разделов", info.headings},
-        {"Текст страницы", info.page_text}, {"Ссылки", info.links},
-        {"Изображения", info.images}, {"Элементы форм", info.forms},
-        {"Канонический URL", info.canonical_urls}
+        {"Текст страницы", info.page_text}
     };
     for (auto& section : sections) {    // Пустые разделы тоже должны содержать значение для навигации по результатам.
         if (section.second.empty()) section.second.push_back("Список пуст.");
