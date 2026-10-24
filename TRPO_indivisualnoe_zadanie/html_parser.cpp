@@ -10,7 +10,7 @@ public:
 
     // Возвращаем номер строки, начиная с единицы.
     std::size_t at(std::size_t offset) const {
-        offset = std::min(offset, source_.size());
+        offset = min(offset, source_.size());
         return 1 + static_cast<std::size_t>(
             std::count(source_.begin(), source_.begin() + offset, '\n'));
     }
