@@ -1,6 +1,6 @@
 #include "Header.h"
 
-// Эти HTML-элементы по правилам рассматриваемого подмножества используют одиночную форму.
+// Эти HTML-элементы используют одиночную форму.
 const std::vector<std::string> void_elements = {
     "area", "base", "br", "col", "embed", "hr", "img",
     "input", "link", "meta", "param", "source", "track", "wbr"
@@ -21,12 +21,13 @@ bool validator_is_void_element(const std::string& name) {
         name) != void_elements.end();
 }
 
-// Добавляем структурную ошибку, сохраняя единый формат диагностики.
+// Сообщение об ошибке.
 void validator_add_diagnostic(
     HtmlAnalysisResult& result,
     const std::string& message,
     std::size_t line,
     std::size_t column) {
+
     result.diagnostics.push_back({
         "Структурная ошибка",
         message,
@@ -40,6 +41,7 @@ void validator_process_closing_tag(
     const HtmlToken& token,
     std::vector<OpenElement>& stack,
     HtmlAnalysisResult& result) {
+
     // Пустой стек показывает, что закрывающий тег встретился первым.
     if (stack.empty()) {
         validator_add_diagnostic(
@@ -86,7 +88,7 @@ void validator_process_closing_tag(
         token.line,
         token.column);
 
-    // Фиксируем каждый пропущенный закрывающий тег и восстанавливаем стек.
+    // Фиксируем каждый пропущенный закрывающий тег.
     while (!stack.empty() && stack.back().name != token.name) {
         const OpenElement unclosed = stack.back();
 
@@ -101,7 +103,7 @@ void validator_process_closing_tag(
         stack.pop_back();
     }
 
-    // Удаляем найденную открывающую пару после обработки вложенных ошибок.
+    // Удаляем найденную открывающую пару после обработки вложенний.
     if (!stack.empty()) {
         stack.pop_back();
     }
@@ -130,8 +132,11 @@ void validate_html_structure(HtmlAnalysisResult& result) {
     for (const HtmlToken& token : result.tokens) {
         if (token.type == HtmlTokenType::OpenTag &&
             !validator_is_void_element(token.name)) {
+
             stack.push_back({ token.name, token.line, token.column });
+
         } else if (token.type == HtmlTokenType::CloseTag) {
+
             validator_process_closing_tag(token, stack, result);
         }
     }

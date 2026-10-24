@@ -5,7 +5,7 @@ bool read_text_file(
     std::string& content,
     std::string& error_message) {
 
-    std::ifstream file(fs::u8path(path), std::ios::binary);                 // Двоичный режим сохраняет исходные байты и исходные переводы строк.
+    std::ifstream file(fs::u8path(path), std::ios::binary);     // Двоичный режим сохраняет исходные байты и исходные переводы строк. Важно для корректного прочтения HTML.
 
     if (!file.is_open()) {                                      // При ошибке открытия возвращаем диагностическое сообщение вызывающему коду.
         error_message = "Ошибка открытия файла: " + path;
@@ -21,9 +21,9 @@ bool read_text_file(
         return false;
     }
 
-    content = buffer.str();                                     // Публикуем прочитанный текст только после проверки состояния потока.
+    content = buffer.str();                                     // Публикуем прочитанный текст после проверки состояния потока.
 
-    if (content.size() >= 3 &&                                  // Удаляем BOM, если файл сохранён с сигнатурой UTF-8.
+    if (content.size() >= 3 &&                                  // Удаляем BOM (Byte Order Mark), если файл сохранён с сигнатурой UTF-8.
         static_cast<unsigned char>(content[0]) == 0xEF &&
         static_cast<unsigned char>(content[1]) == 0xBB &&
         static_cast<unsigned char>(content[2]) == 0xBF) {
