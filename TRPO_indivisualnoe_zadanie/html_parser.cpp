@@ -10,10 +10,9 @@ public:
     // Возвращаем номер строки, начиная с единицы.
     std::size_t at(std::size_t offset) const {
 
-		offset = min(offset, source_.size());       //контроллируем, чтобы offset не выходил за пределы строки
-		return 1 + static_cast<std::size_t>(std::count(source_.begin(), source_.begin() + offset, '\n'));   //считаем количество символов перевода строки     
-    }                                                                                                       //до указанного смещения и прибавляем 1
-
+        offset = min(offset, source_.size());    //контроллируем, чтобы offset не выходил за пределы строки
+        return 1 + static_cast<std::size_t>(std::count(source_.begin(), source_.begin() + offset, '\n'));    //считаем количество символов перевода строки
+    }    //до указанного смещения и прибавляем 1
 
 private:
     const std::string& source_;
@@ -29,18 +28,18 @@ std::string lower_ascii(std::string value) {
 }
 
 std::size_t find_raw_text_end(    // Ищем закрывающий тег в script/style, не разбирая содержимое как HTML.
-    const std::string& source,          //весь исходный HTML-документ
-    std::size_t start,                  //позиция, с которой нужно начинать поиск
-    const std::string& tag_name) {      //имя тега
+    const std::string& source,    //весь исходный HTML-документ
+    std::size_t start,    //позиция, с которой нужно начинать поиск
+    const std::string& tag_name) {    //имя тега
 
     const std::string closing = "</" + tag_name;    // Ищем начало закрывающего тега, а не просто совпадение подстроки.
 
-	for (std::size_t pos = start; pos + closing.size() <= source.size(); ++pos) {   //Проверяем все позиции в исходной строке, начиная с позиции start и до конца строки
+    for (std::size_t pos = start; pos + closing.size() <= source.size(); ++pos) {    //Проверяем все позиции в исходной строке, начиная с позиции start и до конца строки
 
         bool matches = true;
 
-        for (std::size_t j = 0; j < closing.size(); ++j) {                              //Сравниваем символы исходного документа с искомой строкой
-            
+        for (std::size_t j = 0; j < closing.size(); ++j) {    //Сравниваем символы исходного документа с искомой строкой
+
             char ch = source[pos + j];
 
             if (static_cast<char>(std::tolower(static_cast<unsigned char>(ch))) != closing[j]) {
@@ -54,10 +53,10 @@ std::size_t find_raw_text_end(    // Ищем закрывающий тег в s
         }
 
         const std::size_t after_name = pos + closing.size();    // После имени должен идти разделитель
-        if (after_name == source.size() ||                                      // Имя заканчивается в конце строки
-			std::isspace(static_cast<unsigned char>(source[after_name])) ||     // После имени идёт пробельный символ
-			source[after_name] == '>' ||                                        // После имени идёт символ '>'
-			source[after_name] == '/') {                                        // После имени идёт символ '/'
+        if (after_name == source.size() ||    // Имя заканчивается в конце строки
+            std::isspace(static_cast<unsigned char>(source[after_name])) ||    // После имени идёт пробельный символ
+            source[after_name] == '>' ||    // После имени идёт символ '>'
+            source[after_name] == '/') {    // После имени идёт символ '/'
             return pos;
         }
     }
