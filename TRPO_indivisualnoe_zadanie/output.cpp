@@ -93,7 +93,7 @@ void extract_metadata(const HtmlToken& token, DocumentInfo& info) {
          name == "application-name")) info.metadata.push_back(name + ": " + content);
     if (!content.empty() &&
         (property == "og:title" || property == "og:description" ||
-         property == "og:type" || property == "og:url")) {
+         property == "og:type")) {
         info.metadata.push_back(property + ": " + content);
     }
 }
