@@ -1,25 +1,25 @@
 // Подключаем общие объявления проекта.
 #include "Header.h"
 
-// Считаем строки по символу перевода строки \n.
+// Определяем номер строки по количеству символов перевода строки перед заданным смещением.
 class PositionIndex {
 public:
-    PositionIndex(const std::string& source)
+    PositionIndex(const std::string& source) // source — исходный HTML-документ, по которому вычисляются номера строк.
         : source_(source) {}
 
-    // Возвращаем номер строки, начиная с единицы.
-    std::size_t at(std::size_t offset) const {
+    // Возвращаем номер строки, начиная отсчёт с единицы.
+    std::size_t at(std::size_t offset) const { // offset — смещение в исходном тексте, для которого нужно определить строку.
 
-        offset = min(offset, source_.size());    //контроллируем, чтобы offset не выходил за пределы строки
-        return 1 + static_cast<std::size_t>(std::count(source_.begin(), source_.begin() + offset, '\n'));    //считаем количество символов перевода строки
-    }    //до указанного смещения и прибавляем 1
+        offset = min(offset, source_.size()); // Ограничиваем смещение длиной исходного текста.
+        return 1 + static_cast<std::size_t>(std::count(source_.begin(), source_.begin() + offset, '\n')); // Считаем переводы строк до смещения.
+    }
 
 private:
     const std::string& source_;
 };
 
 // Нормализуем регистр ASCII-имён тегов.
-std::string lower_ascii(std::string value) {
+std::string lower_ascii(std::string value) { // value — имя тега, которое нужно привести к нижнему регистру.
     for (char& ch : value) {
         ch = static_cast<char>(
             std::tolower(static_cast<unsigned char>(ch)));
@@ -27,10 +27,11 @@ std::string lower_ascii(std::string value) {
     return value;
 }
 
-std::size_t find_raw_text_end(    // Ищем закрывающий тег в script/style, не разбирая содержимое как HTML.
-    const std::string& source,    //весь исходный HTML-документ
-    std::size_t start,    //позиция, с которой нужно начинать поиск
-    const std::string& tag_name) {    //имя тега
+// Ищем закрывающий тег script/style, не разбирая содержимое как HTML.
+std::size_t find_raw_text_end(
+    const std::string& source,          // Исходный HTML-документ.
+    std::size_t start,                  // Позиция, с которой начинается поиск.
+    const std::string& tag_name) {      // Имя открытого тега: script или style.
 
     const std::string closing = "</" + tag_name;    // Ищем начало закрывающего тега, а не просто совпадение подстроки.
 
@@ -65,7 +66,7 @@ std::size_t find_raw_text_end(    // Ищем закрывающий тег в s
 }
 
 // Проверяем символ, допустимый в имени тега или атрибута.
-bool name_char(char value) {
+bool name_char(char value) { // value — символ, проверяемый на допустимость в имени тега или атрибута.
     return std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '_' ||
            value == ':';
 }
@@ -221,7 +222,7 @@ bool parse_declaration(
     const std::size_t start = cursor;
     const std::size_t end = find_tag_end(source, cursor + 2); // Ищем '>' за начальным маркером декларации с учётом кавычек.
 
-    token.type = HtmlTokenType::Declaration;    // Декларации и инструкции обработки хранятся целиком без дополнительного разбора.
+    token.type = HtmlTokenType::Declaration; // Сохраняем декларацию целиком, не разбирая её содержимое.
     if (end == std::string::npos) {
         token.raw_text = source.substr(cursor);
         add_diagnostic(
@@ -246,7 +247,7 @@ void parse_text(
     std::size_t& cursor,                // Позиция начала текста; обновляется до следующего '<' или конца документа.
     HtmlToken& token,                   // Токен, в который сохраняется текстовый фрагмент.
     HtmlAnalysisResult& result) {       // Результат анализа со списком токенов и счётчиком текстовых фрагментов.
-    const std::size_t end = source.find('<', cursor);    // Текстовый фрагмент заканчивается перед следующим потенциальным тегом.
+    const std::size_t end = source.find('<', cursor); // Ищем следующий потенциальный тег, завершающий текстовый фрагмент.
     cursor = end == std::string::npos ? source.size() : end;
 
     token.type = HtmlTokenType::Text;
@@ -443,7 +444,7 @@ bool parse_tag(
 
 // Последовательно преобразуем исходный HTML в токены и лексические диагностики.
 void parse_html(const std::string& source, HtmlAnalysisResult& result) { // source — исходный HTML-документ; result — результат его разбора.
-    const PositionIndex positions(source);    // Подготавливаем координаты один раз и используем их для всех токенов и диагностик.
+    const PositionIndex positions(source); // Создаём индекс строк один раз для всех токенов и диагностик.
     std::size_t cursor = 0;
 
     while (cursor < source.size()) {    // На каждой итерации cursor должен продвигаться к следующему фрагменту документа.
@@ -452,7 +453,7 @@ void parse_html(const std::string& source, HtmlAnalysisResult& result) { // sour
         token.offset = start;
         token.line = positions.at(start);
 
-        if (parse_comment(source, cursor, token, result, positions)) {    // Проверяем более специфичные конструкции раньше обычного тега или текста.
+        if (parse_comment(source, cursor, token, result, positions)) { // Сначала обрабатываем комментарии, чтобы их содержимое не разбиралось как теги.
             continue;
         }
 
