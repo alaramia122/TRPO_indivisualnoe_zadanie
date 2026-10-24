@@ -6,11 +6,10 @@ const std::vector<std::string> void_elements = {
     "input", "link", "meta", "param", "source", "track", "wbr"
 };
 
-// Координаты открытия сохраняются для указания места элемента, ожидающего закрытия.
+// Номер строки сохраняется для элемента, ожидающего закрытия.
 struct OpenElement {
     std::string name;
     std::size_t line;
-    std::size_t column;
 };
 
 // Проверяем, относится ли тег к элементам, которым не требуется закрывающая пара.
@@ -25,14 +24,12 @@ bool validator_is_void_element(const std::string& name) {
 void validator_add_diagnostic(
     HtmlAnalysisResult& result,
     const std::string& message,
-    std::size_t line,
-    std::size_t column) {
+    std::size_t line) {
 
     result.diagnostics.push_back({
         "Структурная ошибка",
         message,
-        line,
-        column
+        line
     });
 }
 
@@ -48,8 +45,7 @@ void validator_process_closing_tag(
             result,
             "Закрывающий тег </" + token.name +
                 "> требует соответствующего открывающего тега.",
-            token.line,
-            token.column);
+            token.line);
         return;
     }
 
@@ -74,8 +70,7 @@ void validator_process_closing_tag(
             "Закрывающий тег </" + token.name +
                 "> требует соответствующую открывающую пару; текущий открытый элемент — "
                 "тег для <" + stack.back().name + ">.",
-            token.line,
-            token.column);
+            token.line);
         return;
     }
 
@@ -85,8 +80,7 @@ void validator_process_closing_tag(
         "Нарушена вложенность: тег </" + token.name +
             "> встретился до закрытия элемента <" +
             stack.back().name + ">.",
-        token.line,
-        token.column);
+            token.line);
 
     // Фиксируем каждый пропущенный закрывающий тег.
     while (!stack.empty() && stack.back().name != token.name) {
@@ -97,8 +91,7 @@ void validator_process_closing_tag(
             "Открывающий тег <" + unclosed.name +
                 "> остался открытым до закрывающего тега </" +
                 token.name + ">.",
-            unclosed.line,
-            unclosed.column);
+            unclosed.line);
 
         stack.pop_back();
     }
@@ -118,8 +111,7 @@ void validator_report_unclosed_elements(
             result,
             "Открывающий тег <" + element.name +
                 "> ожидает закрывающий тег.",
-            element.line,
-            element.column);
+            element.line);
     }
 }
 
@@ -133,7 +125,7 @@ void validate_html_structure(HtmlAnalysisResult& result) {
         if (token.type == HtmlTokenType::OpenTag &&
             !validator_is_void_element(token.name)) {
 
-            stack.push_back({ token.name, token.line, token.column });
+            stack.push_back({ token.name, token.line });
 
         } else if (token.type == HtmlTokenType::CloseTag) {
 
