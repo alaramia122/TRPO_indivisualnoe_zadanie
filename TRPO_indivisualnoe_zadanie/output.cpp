@@ -324,8 +324,7 @@ void print_diagnostics(const HtmlAnalysisResult& result) {
 
     for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
         std::cout << "[" << diagnostic.category << "] строка "
-                  << diagnostic.line << ", столбец "
-                  << diagnostic.column << ": "
+                  << diagnostic.line << ": "
                   << diagnostic.message << "\n";
     }
 }
@@ -397,7 +396,6 @@ bool save_analysis_report(
             for (const HtmlDiagnostic& diagnostic : result.diagnostics) {
                 report << "[" << diagnostic.category << "] "
                        << "строка " << diagnostic.line
-                       << ", столбец " << diagnostic.column
                        << ": " << diagnostic.message << "\n";
             }
         }
