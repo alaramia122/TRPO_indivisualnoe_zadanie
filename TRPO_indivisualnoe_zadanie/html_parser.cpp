@@ -4,7 +4,7 @@
 // Считаем строки по символу перевода строки \n.
 class PositionIndex {
 public:
-    explicit PositionIndex(const std::string& source)
+    PositionIndex(const std::string& source)
         : source_(source) {
     }
 
