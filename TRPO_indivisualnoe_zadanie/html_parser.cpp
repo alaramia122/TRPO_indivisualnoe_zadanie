@@ -1,6 +1,6 @@
 // Подключаем общие объявления проекта.
 #include "Header.h"
-#include "third_party/utfcpp/source/utf8.h"
+#include "../third_party/utfcpp/source/utf8.h"
 
 
 // Индекс координат вычисляет номер строки и столбца по запросу.
