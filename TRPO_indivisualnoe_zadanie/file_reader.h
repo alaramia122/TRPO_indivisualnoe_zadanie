@@ -1,11 +1,12 @@
-// РРЅС‚РµСЂС„РµР№СЃ С‡С‚РµРЅРёСЏ С„Р°Р№Р»Р°
+// Интерфейс чтения файла
 #pragma once
 
 #include <string>
+#include <vector>
 
-// Р§РёС‚Р°РµС‚ С„Р°Р№Р» С†РµР»РёРєРѕРј; РІРѕР·РІСЂР°С‰Р°РµС‚ true РїСЂРё СѓСЃРїРµС…Рµ Рё false РїСЂРё РѕС€РёР±РєРµ.
-// РџСЂРё СѓСЃРїРµС…Рµ Р·Р°РїРёСЃС‹РІР°РµС‚ РґР°РЅРЅС‹Рµ РІ content, РїСЂРё РѕС€РёР±РєРµ РїРѕСЏСЃРЅРµРЅРёРµ РїРѕРјРµС‰Р°РµС‚ РІ error_message.
-bool read_text_file(
+// Читает файл построчно и возвращает true при успехе.
+// При успехе заполняет lines, при ошибке записывает пояснение в error.
+bool read_file_lines(
     const std::string& path,
-    std::string& content,
-    std::string& error_message);
+    std::vector<std::string>& lines,
+    std::string& error);

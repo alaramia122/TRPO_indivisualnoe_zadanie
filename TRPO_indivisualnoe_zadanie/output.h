@@ -1,12 +1,10 @@
-// РРЅС‚РµСЂС„РµР№СЃ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°
+// Интерфейс отображения результата
 #pragma once
 
 #include "Struct.h"
+#include <string>
 
-// РџРѕРєР°Р·С‹РІР°РµС‚ СЃС‡С‘С‚С‡РёРєРё Р°РЅР°Р»РёР·Р° Рё РїРѕРґСЂРѕР±РЅС‹Р№ СЃРїРёСЃРѕРє РґРёР°РіРЅРѕСЃС‚РёРє РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+// Показывает счётчики анализа, извлечённые сведения и список диагностик.
 void show_analysis_result(
-    const HtmlAnalysisResult& result,
+    const AnalysisResult& result,
     const std::string& source_filename);
-
-// РЎРѕС…СЂР°РЅСЏРµС‚ РїРѕР»РЅС‹Р№ РѕС‚С‡С‘С‚ Рё РІРѕР·РІСЂР°С‰Р°РµС‚ РїСѓС‚СЊ Р»РёР±Рѕ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ.
-bool save_analysis_report(const HtmlAnalysisResult& result, const std::string& source_filename, std::string& saved_path, std::string& error_message);
