@@ -311,7 +311,7 @@ void parse_html(
 		int error_line = 1;                                                     // Ќомер строки, на которой был открыт контейнер.
 
         if (!lines.empty()) {                                                   // ≈сли файл не пуст, прив€зываем диагностику к последней строке.
-            error_line = static_cast<int>(lines.size());
+            error_line = lines.size();
         }
 
         add_diagnostic(

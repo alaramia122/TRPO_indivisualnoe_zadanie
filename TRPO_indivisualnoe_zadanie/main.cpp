@@ -44,7 +44,7 @@ int main() {                                                            // Точка
 
 			parse_html(lines, result);                                                  // Разбираем HTML, заполняем результат.
 			validate_structure(result);                                                 // Проверяем корректность структуры HTML, заполняем диагностики.
-			// show_analysis_result(result, filename);                                      // Показываем пользователю результат анализа HTML.
+			show_analysis_result(result, filename);                                     // Показываем пользователю результат анализа HTML.
 
             system("cls");
             std::cout << "Файл прочитан: " << filename << "\n";
