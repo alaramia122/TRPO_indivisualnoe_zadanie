@@ -206,7 +206,7 @@ void push_text(
 
 // Разбираем исходные строки файла и заполняем токены, счётчики и лексические диагностики.
 void parse_html(
-    const std::vector<std::string>& lines,                              // Строки исходного HTML-документа по порядку.
+    std::vector<std::string>& lines,                              // Строки исходного HTML-документа по порядку.
     AnalysisResult& result) {                                           // Результат, который наполняется токенами и диагностиками.
 
     bool inside_raw = false;                                                // Флаг для определения нахождения внутри script или style.
@@ -214,7 +214,7 @@ void parse_html(
 
     for (int i = 0; i < lines.size(); ++i) {                                // Обрабатываем файл построчно.
 
-        const std::string& line = lines[i];                                     // Текущая строка файла.
+        std::string& line = lines[i];                                     // Текущая строка файла.
         int line_no = i + 1;                                                    // Нумерация строк для диагностик.
         std::size_t pos = 0;                                                    // Текущая позиция разбора внутри строки.
 
@@ -228,7 +228,7 @@ void parse_html(
                 if (end == std::string::npos) {                                         // Если '<' в остатке строки нет,
                     stop = line.size();                                                     // текст идёт до конца строки.
                 }
-                const std::string text = line.substr(pos, stop - pos);                  // Вырезаем текстовый фрагмент.
+                std::string text = line.substr(pos, stop - pos);                  // Вырезаем текстовый фрагмент.
 
                 if (!inside_raw) {                                                      // Если мы не внутри контейнера script или style
 					push_text(text, line_no, result);                                       // сохраняем текстовый токен.
@@ -238,7 +238,7 @@ void parse_html(
                 continue;                                                               // Переходим к следующей итерации разбора строки.
             }
 
-            const std::size_t end = line.find('>', pos);                            // Ищем закрывающую '>' на этой же строке.
+            std::size_t end = line.find('>', pos);                            // Ищем закрывающую '>' на этой же строке.
 
 			if (end == std::string::npos) {                                         // Если закрывающей '>' нет, то это ошибка синтаксиса.
                 add_diagnostic(
@@ -291,7 +291,7 @@ void parse_html(
                 continue;                                                               // Прочий текст внутри script/style пропускаем.
             }
 
-            const std::size_t tokens_before = result.tokens.size();                 // Запоминаем число токенов до разбора текущего тега.
+            std::size_t tokens_before = result.tokens.size();                 // Запоминаем число токенов до разбора текущего тега.
             parse_tag_content(inside, line_no, result);                             // Разбираем тег, комментарий или декларацию.
 
             if (result.tokens.size() > tokens_before) {                             // Если токен действительно добавился, проверяем script/style.

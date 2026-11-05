@@ -2,7 +2,7 @@
 
 // Открываем файл и последовательно считываем каждую строку в вектор.
 bool read_file_lines(
-	const std::string& path,                                            // Путь к файлу.
+	std::string& path,                                            // Путь к файлу.
 	std::vector<std::string>& lines,                                    // Вектор для хранения считанных строк.
 	std::string& error) {                                               // Строка для хранения сообщения об ошибке.
 
