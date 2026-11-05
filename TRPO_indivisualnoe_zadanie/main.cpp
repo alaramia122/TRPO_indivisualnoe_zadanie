@@ -46,7 +46,6 @@ int main() {                                                            // Точка
 			validate_structure(result);                                                 // Проверяем корректность структуры HTML, заполняем диагностики.
 			show_analysis_result(result, filename);                                     // Показываем пользователю результат анализа HTML.
 
-            system("cls");
             std::cout << "Файл прочитан: " << filename << "\n";
             std::cout << "Строк: " << lines.size() << "\n";
             std::cout << "Нажмите любую клавишу для возврата...\n";
